@@ -2,70 +2,59 @@ import express from 'express';
 import cors from 'cors';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { createClient } from '@supabase/supabase-js';
 
 const execFileP = promisify(execFile);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-// Flip on (ENABLE_UPSCALE=1) to double video dimensions with lanczos.
-// NOTE: this is interpolation, NOT true super-resolution — bigger file, not more detail.
 const ENABLE_UPSCALE = process.env.ENABLE_UPSCALE === '1';
 
-// Set ACCESS_CODE in your host's env to lock the tool behind a shared club code.
-// Leave it unset and the tool stays open to anyone with the link.
-const ACCESS_CODE = process.env.ACCESS_CODE || '';
+// server-authoritative credit cost per tool (clients can't tamper with this)
+const TOOL_COST = { downloader: 1 };
 
-function codeMatches(provided) {
-  if (!ACCESS_CODE) return true;             // no code configured → open
-  if (typeof provided !== 'string') return false;
-  const a = Buffer.from(provided);
-  const b = Buffer.from(ACCESS_CODE);
-  return a.length === b.length && timingSafeEqual(a, b); // constant-time
-}
+// Supabase — server side uses the SECRET service_role key (never in the frontend)
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
+const supabase = (SUPABASE_URL && SUPABASE_SERVICE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { persistSession: false } })
+  : null;
 
 app.use(cors());
 app.use(express.json({ limit: '16kb' }));
-// Find index.html whether it's in ./public or sitting next to server.js,
-// and use a path anchored to this file (not the process working dir).
+
+// serve the page (from ./public or next to this file)
 const PUBLIC_DIR = fs.existsSync(path.join(__dirname, 'public', 'index.html'))
   ? path.join(__dirname, 'public')
   : __dirname;
-
-app.use(express.static(PUBLIC_DIR)); // serves index.html at /
-
+app.use(express.static(PUBLIC_DIR));
 app.get('/', (_req, res) => {
   const idx = path.join(PUBLIC_DIR, 'index.html');
-  if (fs.existsSync(idx)) return res.sendFile(idx);
-  res.status(500).send('index.html not found — make sure public/index.html is in your repo.');
+  return fs.existsSync(idx)
+    ? res.sendFile(idx)
+    : res.status(500).send('index.html not found — make sure public/index.html is in your repo.');
 });
 
 // temp workspace
 const WORK = path.join(os.tmpdir(), 'ecdl');
 fs.mkdirSync(WORK, { recursive: true });
 
-// only accept real tiktok links
 const TT_RE = /^https?:\/\/([a-z0-9-]+\.)?(tiktok\.com|vt\.tiktok\.com|vm\.tiktok\.com)\//i;
 
-// id -> { file, filename, mime, expires }
+// finished files, id -> { file, filename, mime, expires }
 const store = new Map();
 const TTL_MS = 10 * 60 * 1000;
-
-// sweep abandoned files every minute
 setInterval(() => {
   const now = Date.now();
   for (const [id, rec] of store) {
-    if (rec.expires < now) {
-      fs.rm(rec.file, { force: true }, () => {});
-      store.delete(id);
-    }
+    if (rec.expires < now) { fs.rm(rec.file, { force: true }, () => {}); store.delete(id); }
   }
 }, 60_000).unref();
 
@@ -73,55 +62,62 @@ function ytdlp(args) {
   return execFileP('yt-dlp', args, { maxBuffer: 64 * 1024 * 1024, timeout: 120_000 });
 }
 
-// verify the club code (also tells the page whether a code is even required)
-app.post('/api/auth', (req, res) => {
-  const { code } = req.body || {};
-  if (!ACCESS_CODE) return res.json({ ok: true, open: true }); // no gate configured
-  if (codeMatches(code)) return res.json({ ok: true });
-  return res.status(401).json({ ok: false, error: 'wrong code.' });
-});
+// who is this request from? verify the Supabase access token, return the user or null
+async function getUser(req) {
+  if (!supabase) return null;
+  const auth = req.get('authorization') || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (!token) return null;
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error) return null;
+  return data.user || null;
+}
 
 app.post('/api/download', async (req, res) => {
   try {
-    if (!codeMatches(req.get('x-access-code'))) {
-      return res.status(401).json({ error: 'locked — enter the club code.' });
-    }
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured on the server yet.' });
+
+    // 1) must be logged in
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+
+    // 2) valid tiktok link
     const { url, audioOnly } = req.body || {};
     if (!url || typeof url !== 'string' || !TT_RE.test(url.trim())) {
       return res.status(400).json({ error: "that's not a valid tiktok url." });
     }
     const clean = url.trim();
 
-    // 1) metadata first (fast, no download)
+    // 3) metadata first — proves the video is real & reachable, so we don't
+    //    charge a credit for dead / private links
     let meta = {};
     try {
       const { stdout } = await ytdlp(['-j', '--no-warnings', '--no-playlist', clean]);
       meta = JSON.parse(stdout.trim().split('\n')[0]);
-    } catch { /* best-effort — keep going even if metadata fails */ }
+    } catch {
+      return res.status(422).json({ error: "couldn't reach that video — might be private or dead." });
+    }
 
+    // 4) spend this tool's credit cost atomically. false = not enough credits
+    const cost = TOOL_COST.downloader;
+    const { data: ok, error: cErr } = await supabase.rpc('spend_credits', { p_user: user.id, p_amount: cost });
+    if (cErr) return res.status(500).json({ error: 'credit check failed — try again.' });
+    if (!ok) return res.status(402).json({ error: 'out of credits' });
+
+    // 5) download
     const id = randomUUID();
     const outTpl = path.join(WORK, `${id}.%(ext)s`);
     const base = ['--no-warnings', '--no-playlist', '--restrict-filenames',
                   '--force-overwrites', '--no-part', '-o', outTpl];
-
-    // 2) download — audio (mp3) or best-quality clean mp4
     const args = audioOnly
       ? [...base, '-x', '--audio-format', 'mp3', '--audio-quality', '0', clean]
-      : [...base,
-         // sort so the HIGHEST resolution / fps / h264-mp4 wins → best real quality
-         '-S', 'res,fps,vcodec:h264,ext:mp4:m4a',
-         '-f', 'bv*+ba/b',
-         '--merge-output-format', 'mp4',
-         clean];
-
+      : [...base, '-S', 'res,fps,vcodec:h264,ext:mp4:m4a', '-f', 'bv*+ba/b', '--merge-output-format', 'mp4', clean];
     await ytdlp(args);
 
-    // locate what yt-dlp produced
     const produced = (await fsp.readdir(WORK)).find((f) => f.startsWith(`${id}.`));
     if (!produced) throw new Error('download produced no file');
     let filePath = path.join(WORK, produced);
 
-    // optional interpolated 2x upscale (video only) — off by default
     if (!audioOnly && ENABLE_UPSCALE) {
       const up = path.join(WORK, `${id}.up.mp4`);
       await execFileP('ffmpeg',
@@ -137,11 +133,17 @@ app.post('/api/download', async (req, res) => {
     const filename = `${author}_${id.slice(0, 6)}.${ext}`;
 
     store.set(id, {
-      file: filePath,
-      filename,
+      file: filePath, filename,
       mime: audioOnly ? 'audio/mpeg' : 'video/mp4',
       expires: Date.now() + TTL_MS,
     });
+
+    // remaining balance for the UI
+    let creditsLeft = null;
+    try {
+      const { data: p } = await supabase.from('profiles').select('credits').eq('id', user.id).single();
+      creditsLeft = p ? p.credits : null;
+    } catch { /* non-fatal */ }
 
     res.json({
       url: `/api/file/${id}`,
@@ -149,30 +151,24 @@ app.post('/api/download', async (req, res) => {
       title: meta.title || meta.description || 'untitled clip',
       author: meta.uploader || meta.creator || '',
       thumbnail: meta.thumbnail || '',
+      creditsLeft,
     });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: "couldn't grab that one — link might be private or dead." });
+    res.status(500).json({ error: "couldn't grab that one — try again." });
   }
 });
 
-// stream the finished file, then clean it up
 app.get('/api/file/:id', (req, res) => {
   const rec = store.get(req.params.id);
   if (!rec || !fs.existsSync(rec.file)) return res.status(404).send('gone or expired');
-
   res.setHeader('Content-Type', rec.mime);
   res.setHeader('Content-Disposition', `attachment; filename="${rec.filename}"`);
-
-  const stream = fs.createReadStream(rec.file);
-  stream.pipe(res);
-  res.on('finish', () => {
-    fs.rm(rec.file, { force: true }, () => {});
-    store.delete(req.params.id);
-  });
-  stream.on('error', () => res.destroy());
+  const s = fs.createReadStream(rec.file);
+  s.pipe(res);
+  res.on('finish', () => { fs.rm(rec.file, { force: true }, () => {}); store.delete(req.params.id); });
+  s.on('error', () => res.destroy());
 });
 
-app.get('/health', (_req, res) => res.json({ ok: true }));
-
+app.get('/health', (_req, res) => res.json({ ok: true, accounts: !!supabase }));
 app.listen(PORT, () => console.log(`exposure club downloader running on :${PORT}`));
