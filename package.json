@@ -1,7 +1,7 @@
 {
   "name": "exposure-club-downloader",
-  "version": "1.0.0",
-  "description": "Exposure Club TikTok video/audio downloader",
+  "version": "1.1.0",
+  "description": "Exposure Club TikTok downloader with accounts + credits",
   "type": "module",
   "main": "server.js",
   "scripts": {
@@ -11,6 +11,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
     "cors": "^2.8.5",
     "express": "^4.19.2"
   }
