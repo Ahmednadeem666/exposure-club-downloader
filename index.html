@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Exposure Club · Downloader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  /* ============ TOKENS ============ */
+  :root{
+    --ink:#0D0B13;
+    --ink-2:#14111D;
+    --ink-3:#1D1928;
+    --line:rgba(255,255,255,.08);
+    --line-2:rgba(255,255,255,.14);
+    --text:#ECE9F5;
+    --muted:#8A85A0;
+    --hot:#FF2E88;      /* magenta primary */
+    --cyan:#34E7E4;     /* cyan split */
+    --ok:#7CF29C;
+    --bad:#FF6B6B;
+    --r:14px;
+    --maxw:640px;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:'Space Grotesk',system-ui,sans-serif;
+    min-height:100vh;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    position:relative;
+  }
+  /* faint grain / grid atmosphere */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      linear-gradient(var(--line) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:64px 64px;
+    -webkit-mask-image:radial-gradient(120% 80% at 50% 0%,#000 30%,transparent 75%);
+            mask-image:radial-gradient(120% 80% at 50% 0%,#000 30%,transparent 75%);
+    opacity:.5;
+  }
+
+  .wrap{
+    position:relative;z-index:1;
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:26px 22px 60px;
+  }
+
+  /* ============ NAV ============ */
+  nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:64px}
+  .club{
+    display:flex;align-items:center;gap:9px;
+    font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+    font-family:'JetBrains Mono',monospace;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--hot);
+    box-shadow:0 0 0 4px rgba(255,46,136,.18);animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{50%{box-shadow:0 0 0 7px rgba(255,46,136,0)}}
+  .tag{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);
+    border:1px solid var(--line);border-radius:100px;padding:5px 11px;
+  }
+
+  /* ============ HERO ============ */
+  .glitch{
+    position:relative;display:inline-block;
+    font-weight:700;letter-spacing:-.02em;line-height:.92;
+    font-size:clamp(52px,15vw,104px);
+    color:var(--text);
+  }
+  .glitch::before,.glitch::after{
+    content:attr(data-text);position:absolute;inset:0;
+    clip-path:inset(0);
+  }
+  .glitch::before{color:var(--cyan);transform:translate(-2px,0);mix-blend-mode:screen}
+  .glitch::after{color:var(--hot);transform:translate(2px,0);mix-blend-mode:screen}
+  .glitch.go::before{animation:gl-a .5s steps(2) 2}
+  .glitch.go::after{animation:gl-b .5s steps(2) 2}
+  @keyframes gl-a{0%{transform:translate(-2px,0)}25%{transform:translate(-6px,2px);clip-path:inset(20% 0 55% 0)}50%{transform:translate(-3px,-2px);clip-path:inset(60% 0 8% 0)}75%{transform:translate(-8px,1px);clip-path:inset(10% 0 70% 0)}100%{transform:translate(-2px,0)}}
+  @keyframes gl-b{0%{transform:translate(2px,0)}25%{transform:translate(6px,-2px);clip-path:inset(50% 0 20% 0)}50%{transform:translate(3px,2px);clip-path:inset(8% 0 60% 0)}75%{transform:translate(8px,-1px);clip-path:inset(70% 0 10% 0)}100%{transform:translate(2px,0)}}
+
+  .sub{
+    margin-top:22px;max-width:34ch;
+    color:var(--muted);font-size:clamp(15px,4.4vw,18px);
+  }
+  .sub b{color:var(--text);font-weight:600}
+
+  /* ============ INPUT (the scanner) ============ */
+  form{margin-top:40px}
+  .field{
+    position:relative;
+    display:flex;align-items:stretch;gap:0;
+    background:var(--ink-2);
+    border:1px solid var(--line-2);
+    border-radius:var(--r);
+    overflow:hidden;
+    transition:border-color .2s,box-shadow .2s;
+  }
+  .field:focus-within{
+    border-color:var(--hot);
+    box-shadow:0 0 0 4px rgba(255,46,136,.14), -2px 0 0 rgba(52,231,228,.5);
+  }
+  .field input{
+    flex:1;min-width:0;background:none;border:none;outline:none;
+    color:var(--text);font-family:'JetBrains Mono',monospace;
+    font-size:15px;padding:18px 16px;
+  }
+  .field input::placeholder{color:#5a5570}
+  .grab{
+    flex:none;border:none;cursor:pointer;
+    background:var(--hot);color:#160010;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;
+    padding:0 22px;letter-spacing:.01em;
+    display:flex;align-items:center;gap:8px;
+    box-shadow:-2px 0 0 var(--cyan);
+    transition:filter .15s,box-shadow .15s,transform .05s;
+  }
+  .grab:hover{filter:brightness(1.08);box-shadow:-4px 0 0 var(--cyan)}
+  .grab:active{transform:translateY(1px)}
+  .grab svg{width:18px;height:18px}
+  .grab:disabled{opacity:.5;cursor:not-allowed}
+
+  .chips{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .chip{
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em;
+    color:var(--muted);background:none;border:1px solid var(--line);
+    border-radius:100px;padding:7px 13px;cursor:pointer;
+    display:flex;align-items:center;gap:7px;user-select:none;
+    transition:color .15s,border-color .15s,background .15s;
+  }
+  .chip .tick{width:6px;height:6px;border-radius:50%;background:#4a4560;transition:background .15s,box-shadow .15s}
+  .chip[aria-pressed="true"]{color:var(--text);border-color:var(--line-2)}
+  .chip[aria-pressed="true"] .tick{background:var(--cyan);box-shadow:0 0 0 3px rgba(52,231,228,.18)}
+  .chip.lock{cursor:default;opacity:.9}
+
+  .err{
+    font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--bad);
+    margin-top:12px;min-height:18px;display:flex;align-items:center;gap:8px;
+    opacity:0;transform:translateY(-3px);transition:opacity .2s,transform .2s;
+  }
+  .err.show{opacity:1;transform:none}
+
+  /* ============ RESULT ============ */
+  .stage{margin-top:26px}
+  .card{
+    position:relative;overflow:hidden;
+    background:var(--ink-2);border:1px solid var(--line);border-radius:var(--r);
+    opacity:0;transform:translateY(10px);pointer-events:none;
+    transition:opacity .35s,transform .35s;
+  }
+  .card.show{opacity:1;transform:none;pointer-events:auto}
+
+  /* scanline while processing */
+  .card.scanning::after{
+    content:"";position:absolute;left:0;right:0;height:2px;top:0;z-index:3;
+    background:linear-gradient(90deg,transparent,var(--cyan),var(--hot),transparent);
+    box-shadow:0 0 14px 2px rgba(52,231,228,.5);
+    animation:scan 1.1s cubic-bezier(.6,0,.4,1) infinite;
+  }
+  @keyframes scan{0%{top:-2px}100%{top:100%}}
+
+  .card-inner{display:flex;gap:0}
+  .thumb{
+    flex:none;width:104px;background:var(--ink-3);position:relative;overflow:hidden;
+    border-right:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb .ph{
+    width:100%;height:100%;
+    background:
+      repeating-linear-gradient(45deg,#221d31 0 10px,#1b1727 10px 20px);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .thumb .ph span{font-family:'JetBrains Mono',monospace;font-size:10px;color:#4a4560;letter-spacing:.1em}
+  .meta{flex:1;min-width:0;padding:16px 18px;display:flex;flex-direction:column;justify-content:center;gap:6px}
+  .meta .status{
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em;
+    color:var(--cyan);text-transform:uppercase;
+  }
+  .meta .status.done{color:var(--ok)}
+  .meta .author{font-size:13px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+  .meta .title{font-size:15px;font-weight:500;line-height:1.35;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .dl{
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    margin-top:6px;text-decoration:none;
+    background:var(--text);color:#111;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;
+    border-radius:10px;padding:12px 14px;
+    transition:filter .15s,transform .05s;align-self:flex-start;
+    padding-left:18px;padding-right:18px;
+  }
+  .dl:hover{filter:brightness(.92)}
+  .dl:active{transform:translateY(1px)}
+  .dl svg{width:16px;height:16px}
+
+  footer{
+    margin-top:auto;padding-top:56px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:#4a4560;
+    display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  }
+  footer a{color:#4a4560;text-decoration:none;border-bottom:1px solid transparent}
+  footer a:hover{color:var(--muted);border-color:var(--line)}
+
+  @media (max-width:480px){
+    nav{margin-bottom:44px}
+    .grab span{display:none}
+    .grab{padding:0 18px}
+    .card-inner{flex-direction:column}
+    .thumb{width:100%;height:120px;border-right:none;border-bottom:1px solid var(--line)}
+    .dl{align-self:stretch;justify-content:center}
+  }
+
+  /* ============ GATE (lock screen) ============ */
+  .gate{
+    position:fixed;inset:0;z-index:50;background:var(--ink);
+    display:flex;align-items:center;justify-content:center;padding:24px;
+    transition:opacity .4s ease,visibility .4s ease;
+  }
+  .gate.hide{opacity:0;visibility:hidden;pointer-events:none}
+  .gate-inner{width:100%;max-width:420px;text-align:center}
+  .gate-mark{font-size:clamp(44px,13vw,76px);margin-bottom:16px}
+  .gate-sub{color:var(--muted);font-size:15px;margin-bottom:26px}
+  .gate-sub b{color:var(--text);font-weight:600}
+  .gate-field{text-align:left}
+  .gate .err{justify-content:flex-start}
+  .gate.shake .gate-inner{animation:shake .38s cubic-bezier(.36,.07,.19,.97)}
+  @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(3px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+
+  :focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+    .card{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+  <div class="gate" id="gate" aria-hidden="false">
+    <div class="gate-inner">
+      <h1 class="glitch gate-mark" id="gate-mark" data-text="LOCKED">LOCKED</h1>
+      <p class="gate-sub">members only. drop the <b>club code</b> to get in.</p>
+      <form id="gate-form" autocomplete="off">
+        <div class="field gate-field">
+          <input id="code" type="password" inputmode="text" placeholder="club code…" aria-label="Club access code" autocomplete="off" />
+          <button class="grab" type="submit">
+            <span>enter</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <div class="err" id="gate-err" role="alert"></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <nav>
+      <div class="club"><span class="dot"></span>Exposure&nbsp;Club</div>
+      <div class="tag">video downloader</div>
+    </nav>
+
+    <header>
+      <h1 class="glitch" id="mark" data-text="YOINK.">YOINK.</h1>
+      <p class="sub">drop a tiktok link, get a <b>clean mp4</b> — no watermark, no cap. built for the club’s repost grind.</p>
+    </header>
+
+    <form id="form" autocomplete="off">
+      <div class="field">
+        <input id="link" type="url" inputmode="url" placeholder="paste a tiktok link…" aria-label="TikTok link" />
+        <button class="grab" id="grab" type="submit">
+          <span>grab</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+
+      <div class="chips">
+        <button type="button" class="chip lock" aria-pressed="true" tabindex="-1"><span class="tick"></span>no watermark</button>
+        <button type="button" class="chip" id="c-hd" aria-pressed="true"><span class="tick"></span>hd</button>
+        <button type="button" class="chip" id="c-audio" aria-pressed="false"><span class="tick"></span>audio only</button>
+      </div>
+
+      <div class="err" id="err" role="alert"></div>
+    </form>
+
+    <div class="stage">
+      <div class="card" id="card">
+        <div class="card-inner">
+          <div class="thumb" id="thumb"><div class="ph"><span>·no preview·</span></div></div>
+          <div class="meta">
+            <div class="status" id="status">reading link…</div>
+            <div class="author" id="author"></div>
+            <div class="title" id="title"></div>
+            <a class="dl" id="dl" href="#" style="display:none" download>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+              save mp4
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <span>exposure club downloader</span>
+      <span>powered by yt-dlp</span>
+    </footer>
+  </div>
+
+<script>
+/* =========================================================
+   CONFIG
+   DEMO = true   -> fake results, for previewing the UI (no backend)
+   DEMO = false  -> talks to the real backend and pulls actual files
+   API_BASE = "" -> same origin (correct when the backend serves this page).
+                    Only set a full URL if the page is hosted separately.
+   ========================================================= */
+const DEMO = true;
+const API_BASE = "";
+let ACCESS_CODE_VALUE = ""; // set once the member passes the gate
+
+const form   = document.getElementById('form');
+const link   = document.getElementById('link');
+const grab   = document.getElementById('grab');
+const err    = document.getElementById('err');
+const mark   = document.getElementById('mark');
+const card   = document.getElementById('card');
+const thumb  = document.getElementById('thumb');
+const statusEl = document.getElementById('status');
+const authorEl = document.getElementById('author');
+const titleEl  = document.getElementById('title');
+const dl     = document.getElementById('dl');
+
+// chip toggles
+document.querySelectorAll('.chip:not(.lock)').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed')==='true' ? 'false':'true');
+  });
+});
+
+const TT_RE = /(?:tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com)/i;
+
+function showErr(msg){ err.textContent = '✕ '+msg; err.classList.add('show'); }
+function clearErr(){ err.classList.remove('show'); }
+function glitch(){ mark.classList.remove('go'); void mark.offsetWidth; mark.classList.add('go'); }
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  clearErr();
+  const url = link.value.trim();
+  if(!url){ showErr("paste a link first."); link.focus(); return; }
+  if(!TT_RE.test(url)){ showErr("that's not a tiktok url. try again."); return; }
+
+  const audioOnly = document.getElementById('c-audio').getAttribute('aria-pressed')==='true';
+  const hd = document.getElementById('c-hd').getAttribute('aria-pressed')==='true';
+
+  glitch();
+  grab.disabled = true;
+  card.classList.add('show','scanning');
+  dl.style.display='none';
+  statusEl.classList.remove('done');
+  statusEl.textContent='reading link…';
+  authorEl.textContent=''; titleEl.textContent='';
+  thumb.innerHTML='<div class="ph"><span>·scanning·</span></div>';
+
+  try{
+    const data = DEMO
+      ? await demoFetch(url, {audioOnly, hd})
+      : await realFetch(url, {audioOnly, hd});
+
+    // fill result
+    if(data.thumbnail){ thumb.innerHTML = '<img alt="" src="'+data.thumbnail+'">'; }
+    authorEl.textContent = data.author ? '@'+data.author.replace(/^@/,'') : '';
+    titleEl.textContent  = data.title || 'untitled clip';
+    statusEl.textContent = audioOnly ? 'audio ready ✦' : 'clean mp4 ready ✦';
+    statusEl.classList.add('done');
+    dl.href = data.url;
+    dl.setAttribute('download', (data.filename || 'exposure-club') + (audioOnly?'.mp3':'.mp4'));
+    dl.querySelector('svg').nextSibling.textContent = audioOnly ? ' save mp3' : ' save mp4';
+    dl.style.display='inline-flex';
+  }catch(ex){
+    card.classList.remove('show');
+    showErr(ex.message || "couldn't grab that one. try again.");
+  }finally{
+    card.classList.remove('scanning');
+    grab.disabled=false;
+  }
+});
+
+/* Real backend call — wired in step 2 */
+async function realFetch(url, opts){
+  const r = await fetch(API_BASE + '/api/download', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-access-code':ACCESS_CODE_VALUE},
+    body: JSON.stringify({url, ...opts})
+  });
+  if(r.status===401){ showGate(); throw new Error('locked — re-enter the club code.'); }
+  if(!r.ok){
+    let m='server said no.'; try{ m=(await r.json()).error||m; }catch(_){}
+    throw new Error(m);
+  }
+  return r.json(); // { url, title, author, thumbnail, filename }
+}
+
+/* Demo mode — lets you judge the flow before the backend exists */
+function demoFetch(url){
+  return new Promise((res)=>{
+    setTimeout(()=>statusEl.textContent='stripping watermark…', 700);
+    setTimeout(()=>res({
+      title:'when the organic view count hits different 💀 #cpa #fyp',
+      author:'nadiddy',
+      thumbnail:'',
+      url:'#',
+      filename:'exposure-demo'
+    }), 1500);
+  });
+}
+/* ============ GATE LOGIC ============ */
+const gate     = document.getElementById('gate');
+const gateForm = document.getElementById('gate-form');
+const codeIn   = document.getElementById('code');
+const gateErr  = document.getElementById('gate-err');
+const gateMark = document.getElementById('gate-mark');
+
+// In DEMO, the code is "exposure" (so you can test right + wrong).
+// Live, the real code comes from the ACCESS_CODE env var on your server.
+const DEMO_CODE = 'exposure';
+
+function safeStore(v){ try{ sessionStorage.setItem('ecdl_code', v); }catch(_){} }
+function safeLoad(){ try{ return sessionStorage.getItem('ecdl_code') || ''; }catch(_){ return ''; } }
+
+function openTool(){
+  gate.classList.add('hide');
+  gate.setAttribute('aria-hidden','true');
+  setTimeout(()=>{ link && link.focus(); }, 420);
+}
+function showGate(){
+  gate.classList.remove('hide');
+  gate.setAttribute('aria-hidden','false');
+  setTimeout(()=>codeIn.focus(), 100);
+}
+function gateGlitch(){ gateMark.classList.remove('go'); void gateMark.offsetWidth; gateMark.classList.add('go'); }
+
+async function verifyCode(code){
+  if(DEMO) return code === DEMO_CODE;
+  try{
+    const r = await fetch(API_BASE + '/api/auth', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ code })
+    });
+    return r.ok;
+  }catch(_){ return false; }
+}
+
+gateForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  gateErr.classList.remove('show');
+  const code = codeIn.value.trim();
+  if(!code){ gateErr.textContent='✕ enter the code.'; gateErr.classList.add('show'); return; }
+
+  const ok = await verifyCode(code);
+  if(ok){
+    ACCESS_CODE_VALUE = code;
+    safeStore(code);
+    gateGlitch();
+    setTimeout(openTool, 260);
+  }else{
+    gate.classList.remove('shake'); void gate.offsetWidth; gate.classList.add('shake');
+    gateErr.textContent='✕ wrong code. ask in the club.';
+    gateErr.classList.add('show');
+    codeIn.select();
+  }
+});
+
+// decide on load: skip the gate if it's not needed, or restore a saved pass
+(async function initGate(){
+  if(DEMO){ showGate(); return; }
+  // is a code even required? probe the server.
+  try{
+    const r = await fetch(API_BASE + '/api/auth', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code:'' })
+    });
+    const d = await r.json().catch(()=>({}));
+    if(r.ok && d.open){ ACCESS_CODE_VALUE=''; openTool(); return; } // no gate configured
+  }catch(_){ /* fall through to gate */ }
+
+  const saved = safeLoad();
+  if(saved && await verifyCode(saved)){ ACCESS_CODE_VALUE=saved; openTool(); return; }
+  showGate();
+})();
+</script>
+</body>
+</html>
