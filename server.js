@@ -170,5 +170,33 @@ app.get('/api/file/:id', (req, res) => {
   s.on('error', () => res.destroy());
 });
 
+// redeem a coupon code for credits (server-authoritative, atomic in the DB)
+app.post('/api/redeem', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured on the server yet.' });
+
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+
+    const { code } = req.body || {};
+    if (!code || typeof code !== 'string' || !code.trim()) {
+      return res.status(400).json({ error: 'enter a code.' });
+    }
+
+    const { data, error } = await supabase.rpc('redeem_coupon', {
+      p_user: user.id,
+      p_code: code.trim(),
+    });
+    if (error) return res.status(500).json({ error: 'redeem failed — try again.' });
+
+    if (!data || !data.ok) {
+      return res.status(400).json({ error: (data && data.error) || 'invalid code' });
+    }
+    return res.json({ creditsAdded: data.credits_added, balance: data.balance });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'redeem failed — try again.' });
+  }
+});
+
 app.get('/health', (_req, res) => res.json({ ok: true, accounts: !!supabase }));
-app.listen(PORT, () => console.log(`exposure club downloader running on :${PORT}`));
