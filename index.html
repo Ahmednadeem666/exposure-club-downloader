@@ -283,10 +283,10 @@
     <section class="view" id="view-downloader">
       <button class="back" data-back>&#8592; back to tools</button>
       <h1 class="glitch" id="mark">YOINK<span class="dot-red">.</span></h1>
-      <p class="sub">drop a tiktok link, get a <b>clean mp4</b> &#8212; no watermark, no cap.</p>
+      <p class="sub">drop a <b>tiktok, youtube, or instagram</b> link, get a clean download &#8212; no watermark, no cap.</p>
       <form id="form" autocomplete="off">
         <div class="field">
-          <input id="link" type="url" inputmode="url" placeholder="paste a tiktok link&#8230;" aria-label="TikTok link" />
+          <input id="link" type="url" inputmode="url" placeholder="paste a tiktok, youtube or ig link&#8230;" aria-label="Video link" />
           <button class="grab" id="grab" type="submit">
             <span>grab</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -465,12 +465,12 @@ async function refreshBalance(){
   }catch(_){}
 }
 
-const TT_RE=/(?:tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com)/i;
+const TT_RE=/(?:tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com|youtube\.com|youtu\.be|instagram\.com)/i;
 form.addEventListener('submit', async (e)=>{
   e.preventDefault(); clearErr(err); oos.classList.remove('show');
   const url=link.value.trim();
   if(!url){ showErr(err,'paste a link first.'); link.focus(); return; }
-  if(!TT_RE.test(url)){ showErr(err,"that's not a tiktok url. try again."); return; }
+  if(!TT_RE.test(url)){ showErr(err,"unsupported link — use tiktok, youtube, or instagram."); return; }
   const audioOnly=$('c-audio').getAttribute('aria-pressed')==='true';
   glitch(mark); grab.disabled=true;
   card.classList.add('show','scanning'); dl.style.display='none'; statusEl.classList.remove('done');
