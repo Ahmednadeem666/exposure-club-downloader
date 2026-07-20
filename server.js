@@ -46,7 +46,17 @@ app.get('/', (_req, res) => {
 const WORK = path.join(os.tmpdir(), 'ecdl');
 fs.mkdirSync(WORK, { recursive: true });
 
+// which platforms we accept, and what each costs
 const TT_RE = /^https?:\/\/([a-z0-9-]+\.)?(tiktok\.com|vt\.tiktok\.com|vm\.tiktok\.com)\//i;
+const YT_RE = /^https?:\/\/([a-z0-9-]+\.)?(youtube\.com|youtu\.be)\//i;
+const IG_RE = /^https?:\/\/([a-z0-9-]+\.)?instagram\.com\//i;
+
+function platformFor(url) {
+  if (TT_RE.test(url)) return { name: 'tiktok', cost: 1 };
+  if (YT_RE.test(url)) return { name: 'youtube', cost: 2 };
+  if (IG_RE.test(url)) return { name: 'instagram', cost: 2 };
+  return null;
+}
 
 // finished files, id -> { file, filename, mime, expires }
 const store = new Map();
@@ -81,12 +91,16 @@ app.post('/api/download', async (req, res) => {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ error: 'please log in.' });
 
-    // 2) valid tiktok link
+    // 2) valid, supported link (tiktok / youtube / instagram)
     const { url, audioOnly } = req.body || {};
-    if (!url || typeof url !== 'string' || !TT_RE.test(url.trim())) {
-      return res.status(400).json({ error: "that's not a valid tiktok url." });
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ error: "paste a link first." });
     }
     const clean = url.trim();
+    const platform = platformFor(clean);
+    if (!platform) {
+      return res.status(400).json({ error: "unsupported link — use TikTok, YouTube, or Instagram." });
+    }
 
     // 3) metadata first — proves the video is real & reachable, so we don't
     //    charge a credit for dead / private links
@@ -98,8 +112,8 @@ app.post('/api/download', async (req, res) => {
       return res.status(422).json({ error: "couldn't reach that video — might be private or dead." });
     }
 
-    // 4) spend this tool's credit cost atomically. false = not enough credits
-    const cost = TOOL_COST.downloader;
+   // 4) spend this platform's credit cost atomically. false = not enough credits
+    const cost = platform.cost;
     const { data: ok, error: cErr } = await supabase.rpc('spend_credits', { p_user: user.id, p_amount: cost });
     if (cErr) return res.status(500).json({ error: 'credit check failed — try again.' });
     if (!ok) return res.status(402).json({ error: 'out of credits' });
