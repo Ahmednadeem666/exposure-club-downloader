@@ -425,8 +425,15 @@ logoutBtn.addEventListener('click', async ()=>{ if(!DEMO&&supabase) await supaba
 async function refreshBalance(){
   if(DEMO){ setCredits(demoCredits); return; }
   if(!session) return;
-  try{ const { data } = await supabase.from('profiles').select('credits,username').eq('id',session.user.id).single();
-    if(data){ setCredits(data.credits); setUser(data.username || (session.user.email||'').split('@')[0]); } }catch(_){}
+  try{
+    const { data } = await supabase.from('profiles').select('credits,username').eq('id',session.user.id).single();
+    if(data){
+      setCredits(data.credits);
+      const meta = session.user.user_metadata || {};
+      const name = data.username || meta.username || meta.full_name || meta.name || meta.user_name || (session.user.email||'').split('@')[0];
+      if(name) setUser(name);
+    }
+  }catch(_){}
 }
 
 const TT_RE=/(?:tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com)/i;
@@ -473,7 +480,16 @@ function demoFetch(url,opts){
   });
 }
 
-$('sub-btn').addEventListener('click',()=>showErr(err,'subscriptions launch next — hang tight.'));
+$('discord-btn').addEventListener('click', async ()=>{
+  if(DEMO){ showErr(authErr,'discord login works on the live site.'); return; }
+  if(!supabase){ showErr(authErr,'server not configured yet.'); return; }
+  clearErr(authErr);
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider:'discord',
+    options:{ redirectTo: window.location.origin }
+  });
+  if(error) showErr(authErr, error.message.toLowerCase());
+});
 
 renderTools();
 (async function init(){
@@ -481,7 +497,10 @@ renderTools();
   if(!supabase){ showErr(authErr,'server keys not set yet.'); showAuth(); return; }
   const { data } = await supabase.auth.getSession();
   if(data.session){ session=data.session; await refreshBalance(); enterHub(); } else showAuth();
-  supabase.auth.onAuthStateChange((_e,s)=>{ session=s; });
+  supabase.auth.onAuthStateChange(async (_e,s)=>{
+    session=s;
+    if(s){ await refreshBalance(); enterHub(); }
+  });
 })();
 </script>
 </body>
