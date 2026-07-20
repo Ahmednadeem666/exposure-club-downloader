@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:22-slim
 
 # system deps: ffmpeg (merge/audio/upscale) + curl/ca-certs to fetch yt-dlp
 RUN apt-get update && apt-get install -y --no-install-recommends \
