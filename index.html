@@ -61,6 +61,26 @@
   .dash-title .r{color:var(--red)}
   .dash-sub{max-width:46ch;margin:18px auto 0;color:var(--muted);font-size:clamp(15px,3.6vw,17px)}
 
+  /* redeem box */
+  .redeem{max-width:440px;margin:34px auto 40px;text-align:center}
+  .redeem-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .redeem .row{display:flex;gap:8px}
+  .redeem input{flex:1;min-width:0;background:var(--bg-soft);border:1px solid var(--line);border-radius:var(--r);
+    color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:.08em;text-transform:uppercase;
+    padding:14px 15px;outline:none;transition:border-color .2s,box-shadow .2s}
+  .redeem input::placeholder{color:#6a5c5b;letter-spacing:.04em}
+  .redeem input:focus{border-color:var(--red);box-shadow:0 0 0 4px rgba(229,57,44,.16)}
+  .redeem button{flex:none;border:none;cursor:pointer;background:linear-gradient(180deg,var(--red-bright),var(--red));
+    color:#1c0503;font-family:'Archivo',sans-serif;font-weight:800;font-size:14px;border-radius:var(--r);padding:0 20px;
+    transition:filter .15s,transform .05s}
+  .redeem button:hover{filter:brightness(1.09)}
+  .redeem button:active{transform:translateY(1px)}
+  .redeem button:disabled{opacity:.5;cursor:not-allowed}
+  .redeem-msg{font-family:'JetBrains Mono',monospace;font-size:13px;margin-top:12px;min-height:18px;opacity:0;transition:opacity .2s}
+  .redeem-msg.show{opacity:1}
+  .redeem-msg.good{color:var(--red-bright)}
+  .redeem-msg.bad{color:var(--red-bright)}
+
   .tools-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
   .tool{position:relative;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px}
   .tool-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
@@ -248,6 +268,15 @@
         <p class="dash-sub">Every tool we build, one login, one credit wallet. Pick one and go.</p>
       </div>
       <div class="tools-grid" id="tools-grid"></div>
+
+      <div class="redeem">
+        <div class="redeem-label">Redeem Code for Credits</div>
+        <div class="row">
+          <input id="redeem-code" type="text" placeholder="EC-XXXX-XXXX" aria-label="Redeem code" maxlength="20" autocomplete="off" />
+          <button id="redeem-btn" type="button">redeem</button>
+        </div>
+        <div class="redeem-msg" id="redeem-msg" role="status"></div>
+      </div><div class="tools-grid" id="tools-grid"></div>
     </section>
 
     <!-- DOWNLOADER TOOL -->
@@ -490,7 +519,28 @@ $('discord-btn').addEventListener('click', async ()=>{
   });
   if(error) showErr(authErr, error.message.toLowerCase());
 });
-
+  
+const redeemBtn=$('redeem-btn'), redeemCode=$('redeem-code'), redeemMsg=$('redeem-msg');
+function showRedeemMsg(msg,kind){ redeemMsg.textContent=msg; redeemMsg.className='redeem-msg show '+(kind||''); }
+async function doRedeem(){
+  const code=(redeemCode.value||'').trim();
+  if(!code){ showRedeemMsg('✕ enter a code.','bad'); redeemCode.focus(); return; }
+  if(DEMO){ showRedeemMsg('✦ codes work on the live site.','good'); return; }
+  redeemBtn.disabled=true; showRedeemMsg('checking…','');
+  try{
+    const token=session&&session.access_token;
+    const r=await fetch('/api/redeem',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({code})});
+    const data=await r.json();
+    if(!r.ok){ showRedeemMsg('✕ '+(data.error||'invalid code'),'bad'); return; }
+    if(data.balance!=null) setCredits(data.balance);
+    showRedeemMsg('✦ +'+data.creditsAdded+' credits added!','good');
+    redeemCode.value='';
+  }catch(_){ showRedeemMsg('✕ something went wrong. try again.','bad'); }
+  finally{ redeemBtn.disabled=false; }
+}
+redeemBtn.addEventListener('click',doRedeem);
+redeemCode.addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); doRedeem(); }});
+  
 renderTools();
 (async function init(){
   if(DEMO){ showAuth(); return; }
