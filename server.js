@@ -7,6 +7,9 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const execFileP = promisify(execFile);
 
@@ -30,7 +33,19 @@ function codeMatches(provided) {
 
 app.use(cors());
 app.use(express.json({ limit: '16kb' }));
-app.use(express.static(path.join(process.cwd(), 'public'))); // serves public/index.html at /
+// Find index.html whether it's in ./public or sitting next to server.js,
+// and use a path anchored to this file (not the process working dir).
+const PUBLIC_DIR = fs.existsSync(path.join(__dirname, 'public', 'index.html'))
+  ? path.join(__dirname, 'public')
+  : __dirname;
+
+app.use(express.static(PUBLIC_DIR)); // serves index.html at /
+
+app.get('/', (_req, res) => {
+  const idx = path.join(PUBLIC_DIR, 'index.html');
+  if (fs.existsSync(idx)) return res.sendFile(idx);
+  res.status(500).send('index.html not found — make sure public/index.html is in your repo.');
+});
 
 // temp workspace
 const WORK = path.join(os.tmpdir(), 'ecdl');
