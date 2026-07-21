@@ -230,6 +230,14 @@
   .pm-buy{margin-top:10px;background:linear-gradient(180deg,var(--red-bright),var(--red));color:#1c0503;border:none;border-radius:9px;padding:12px 0;font-family:'Archivo',sans-serif;font-weight:800;font-size:14px;cursor:pointer;transition:filter .15s}
   .pm-buy:hover{filter:brightness(1.08)}
   .pm-note{margin-top:18px;text-align:center;color:var(--muted);font-size:12px;font-family:'JetBrains Mono',monospace}
+  .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);z-index:9999;
+    background:linear-gradient(180deg,var(--card-2),var(--card));border:1px solid var(--red);border-radius:12px;
+    padding:16px 22px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 40px rgba(0,0,0,.5);
+    opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;max-width:90vw}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast .t-dot{width:10px;height:10px;border-radius:50%;background:var(--red-bright);box-shadow:0 0 12px var(--red-bright);flex:none}
+  .toast .t-txt{font-family:'Archivo',sans-serif;font-size:15px;font-weight:600;color:var(--text)}
+  .toast .t-txt b{color:var(--red-bright)}
   @media(max-width:560px){.pm-grid{grid-template-columns:1fr}}
 
   @media (max-width:640px){
@@ -521,8 +529,8 @@ authForm.addEventListener('submit', async (e)=>{
 logoutBtn.addEventListener('click', async ()=>{ if(!DEMO&&supabase) await supabase.auth.signOut(); session=null; setUser(null); showAuth(); });
 
 async function refreshBalance(){
-  if(DEMO){ setCredits(demoCredits); return; }
-  if(!session) return;
+  if(DEMO){ setCredits(demoCredits); return demoCredits; }
+  if(!session) return null;
   try{
     const { data } = await supabase.from('profiles').select('credits,username').eq('id',session.user.id).single();
     if(data){
@@ -530,8 +538,37 @@ async function refreshBalance(){
       const meta = session.user.user_metadata || {};
       const name = data.username || meta.username || meta.full_name || meta.name || meta.user_name || (session.user.email||'').split('@')[0];
       if(name) setUser(name);
+      return data.credits;
     }
   }catch(_){}
+  return null;
+}
+
+// toast helper
+let toastTimer=null;
+function showToast(msg){
+  const t=$('toast'); $('toast-txt').innerHTML=msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'), 5000);
+}
+
+// after a purchase, poll until the webhook lands the new credits, then celebrate
+async function watchForCredits(before){
+  const start=Date.now();
+  const startBal = (before==null?0:before);
+  // poll every 2s for up to 40s
+  while(Date.now()-start < 40000){
+    await new Promise(r=>setTimeout(r,2000));
+    const now = await refreshBalance();
+    if(now!=null && now > startBal){
+      const added = now - startBal;
+      showToast(`&#10003; <b>${added} credits</b> added to your balance!`);
+      return;
+    }
+  }
+  // fallback: didn't detect within window (webhook slow) — soft nudge
+  showToast('payment received &#8212; credits will appear shortly.');
 }
 
 const TT_RE=/(?:tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com|instagram\.com)/i;
@@ -580,6 +617,7 @@ function demoFetch(url,opts){
 
 // ---- Paddle pricing + checkout ----
 let paddleReady=false;
+let balanceBeforeCheckout=null;   // snapshot taken when checkout opens
 function initPaddle(){
   if(paddleReady || DEMO || typeof Paddle==='undefined') return;
   try{
@@ -587,10 +625,11 @@ function initPaddle(){
     Paddle.Initialize({
       token: PADDLE_TOKEN,
       eventCallback: (ev)=>{
-        // when checkout completes, refresh the balance after a moment
-        if(ev && (ev.name==='checkout.completed')){
-          setTimeout(refreshBalance, 2500);
-          setTimeout(refreshBalance, 6000);
+        if(!ev) return;
+        if(ev.name==='checkout.completed'){
+          // close the pricing modal and watch for the webhook to land credits
+          closePricing();
+          watchForCredits(balanceBeforeCheckout);
         }
       }
     });
@@ -624,10 +663,12 @@ function openPricing(){
 }
 function closePricing(){ pmOverlay.classList.remove('show'); }
 
-function openCheckout(priceId){
+async function openCheckout(priceId){
   if(!session || !session.user){ showErr(err,'please log in first.'); return; }
   if(typeof Paddle==='undefined'){ showErr(err,'checkout still loading — try again in a sec.'); return; }
   initPaddle();
+  // snapshot current balance so we can detect the increase after purchase
+  balanceBeforeCheckout = await refreshBalance();
   const email = session.user.email || undefined;
   Paddle.Checkout.open({
     items:[{ priceId, quantity:1 }],
@@ -762,6 +803,7 @@ renderTools();
       <p class="pm-note">secure checkout by paddle &#183; credits stack onto your balance</p>
     </div>
   </div>
+  <div class="toast" id="toast"><span class="t-dot"></span><span class="t-txt" id="toast-txt"></span></div>
 
 </body>
 </html>
