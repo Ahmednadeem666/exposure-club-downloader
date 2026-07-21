@@ -199,6 +199,13 @@
     border:none;border-radius:var(--r);padding:15px 0;font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;transition:filter .15s}
   .discord:hover{filter:brightness(1.08)}
   .discord svg{width:20px;height:20px}
+  .magic{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;background:transparent;color:var(--text);
+    border:1px solid var(--line-soft);border-radius:var(--r);padding:15px 0;font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;transition:border-color .15s,background .15s;margin-top:12px}
+  .magic:hover{border-color:var(--red);background:rgba(229,57,44,.06)}
+  .magic svg{width:19px;height:19px}
+  .forgot{margin-top:12px;text-align:right}
+  .forgot button{background:none;border:none;color:var(--muted);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:12px;text-decoration:underline;padding:0}
+  .forgot button:hover{color:var(--red)}
   .soon{opacity:.5;cursor:not-allowed}
 
   @media (max-width:640px){
@@ -235,6 +242,7 @@
         <div class="field auth-field" id="username-field" style="display:none"><input id="username" type="text" placeholder="username&#8230;" aria-label="Username" autocomplete="username" maxlength="20" /></div>
         <div class="field auth-field"><input id="email" type="email" placeholder="email&#8230;" aria-label="Email" autocomplete="email" /></div>
         <div class="field auth-field"><input id="password" type="password" placeholder="password&#8230;" aria-label="Password" autocomplete="current-password" /></div>
+        <div class="forgot" id="forgot-row"><button type="button" id="forgot-btn">forgot password?</button></div>
         <button class="grab authbtn" id="authbtn" type="submit">
           <span id="authbtn-label">log in</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -246,7 +254,27 @@
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.5c1.7.4 2.5.9 3.4 1.6a13 13 0 0 0-11.2 0C8.3 4.4 9.1 3.9 10.8 3.5L10.6 3A19.8 19.8 0 0 0 5.7 4.4C2.6 9 1.8 13.5 2.2 17.9A19.9 19.9 0 0 0 8.3 21l.4-.6c-1-.3-1.9-.8-2.7-1.4l.6-.4a14.2 14.2 0 0 0 12.8 0l.6.4c-.8.6-1.7 1-2.7 1.4l.4.6a19.9 19.9 0 0 0 6.1-3.1c.5-5.2-.8-9.6-3.5-13.5ZM9 15.3c-1 0-1.7-.9-1.7-2s.8-2 1.7-2 1.7.9 1.7 2-.8 2-1.7 2Zm6 0c-1 0-1.7-.9-1.7-2s.8-2 1.7-2 1.7.9 1.7 2-.8 2-1.7 2Z"/></svg>
         login with Discord
       </button>
+      <button class="magic" id="magic-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg>
+        email me a login link
+      </button>
       <p class="auth-swap" id="auth-swap-line">no account? <button type="button" id="swap">sign up</button></p>
+    </div>
+  </div>
+
+  <div class="gate hide" id="reset-gate">
+    <div class="gate-inner">
+      <h1 class="glitch gate-mark" id="reset-mark">EC<span class="dot-red">.</span></h1>
+      <p class="gate-sub" id="reset-sub">set a new password.</p>
+      <form id="reset-form" autocomplete="on">
+        <div class="field auth-field"><input id="reset-pass" type="password" placeholder="new password&#8230;" aria-label="New password" autocomplete="new-password" /></div>
+        <div class="field auth-field"><input id="reset-pass2" type="password" placeholder="confirm new password&#8230;" aria-label="Confirm new password" autocomplete="new-password" /></div>
+        <button class="grab authbtn" id="reset-btn" type="submit">
+          <span>update password</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <div class="err" id="reset-err" role="alert"></div>
+      </form>
     </div>
   </div>
 
@@ -332,9 +360,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 /* CONFIG — set DEMO=false and paste your Supabase Project URL + anon key when deploying.
    The anon key is safe here. NEVER paste the service_role key. */
-const DEMO = false;
-const SUPABASE_URL = "https://blswxegpijwkphrwutov.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_owa2MAxEX64TqfOqd5cVsg_V43acaXZ";
+const DEMO = true;
+const SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY";
 const supabase = (!DEMO && SUPABASE_URL.startsWith('http')) ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 const $ = (id)=>document.getElementById(id);
@@ -342,8 +370,8 @@ const $ = (id)=>document.getElementById(id);
 /* TOOLS — edit costs / status here as you build each one */
 const TOOLS = [
   { id:'downloader', mono:'YK', name:'YOINK Downloader', status:'live', cost:1,
-    blurb:'Grab any TikTok — clean mp4 or mp3, zero watermark. YouTube + IG coming soon.',
-    bullets:['No watermark','MP4 + audio-only','Best quality'] },
+    blurb:'Grab TikTok & Instagram — clean mp4 or mp3, zero watermark.',
+    bullets:['TikTok · Instagram','MP4 + audio-only','No watermark'] },
   { id:'hookgen', mono:'HG', name:'Hook Generator', status:'soon', cost:1,
     blurb:'Feed it your winners, get fresh hooks in your own voice.',
     bullets:['Learns your style','8 hooks per gen','Tap to copy'] },
@@ -366,6 +394,9 @@ const usernameIn=$('username'), usernameField=$('username-field'), userchip=$('u
 const form=$('form'), link=$('link'), grab=$('grab'), err=$('err'), mark=$('mark');
 const card=$('card'), thumb=$('thumb'), statusEl=$('status'), authorEl=$('author'), titleEl=$('title'), dl=$('dl');
 const oos=$('oos'), toolsGrid=$('tools-grid');
+const resetGate=$('reset-gate'), resetForm=$('reset-form'), resetPass=$('reset-pass'), resetPass2=$('reset-pass2'),
+  resetBtn=$('reset-btn'), resetErr=$('reset-err'), resetSub=$('reset-sub');
+let recovering=false;
 
 let mode='login', session=null, demoCredits=5;
 
@@ -445,7 +476,10 @@ authForm.addEventListener('submit', async (e)=>{
     await refreshBalance(); glitch(gateMark); setTimeout(enterHub,260);
   }catch(ex){
     gate.classList.remove('shake'); void gate.offsetWidth; gate.classList.add('shake');
-    showErr(authErr,(ex&&ex.message)?ex.message.toLowerCase():'that didn’t work. try again.');
+    const msg = (ex && (ex.message || ex.error_description || ex.msg || ex.error
+                 || (typeof ex==='string'?ex:'') )) || 'that didn’t work. try again.';
+    console.error('AUTH FAIL:', ex);
+    showErr(authErr, String(msg).toLowerCase());
   }finally{ authBtn.disabled=false; }
 });
 
@@ -509,17 +543,8 @@ function demoFetch(url,opts){
   });
 }
 
-$('discord-btn').addEventListener('click', async ()=>{
-  if(DEMO){ showErr(authErr,'discord login works on the live site.'); return; }
-  if(!supabase){ showErr(authErr,'server not configured yet.'); return; }
-  clearErr(authErr);
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider:'discord',
-    options:{ redirectTo: window.location.origin }
-  });
-  if(error) showErr(authErr, error.message.toLowerCase());
-});
-  
+$('sub-btn').addEventListener('click',()=>showErr(err,'subscriptions launch next — hang tight.'));
+
 const redeemBtn=$('redeem-btn'), redeemCode=$('redeem-code'), redeemMsg=$('redeem-msg');
 function showRedeemMsg(msg,kind){ redeemMsg.textContent=msg; redeemMsg.className='redeem-msg show '+(kind||''); }
 async function doRedeem(){
@@ -540,14 +565,88 @@ async function doRedeem(){
 }
 redeemBtn.addEventListener('click',doRedeem);
 redeemCode.addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); doRedeem(); }});
-  
+
+$('discord-btn').addEventListener('click', async ()=>{
+  if(DEMO){ showErr(authErr,'discord login works on the live site.'); return; }
+  if(!supabase){ showErr(authErr,'server not configured yet.'); return; }
+  clearErr(authErr);
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider:'discord',
+    options:{ redirectTo: window.location.origin }
+  });
+  if(error) showErr(authErr, error.message.toLowerCase());
+});
+
+// forgot password → email a reset link
+$('forgot-btn').addEventListener('click', async ()=>{
+  clearErr(authErr);
+  const email=emailIn.value.trim();
+  if(!email){ showErr(authErr,'enter your email first, then tap forgot password.'); emailIn.focus(); return; }
+  if(DEMO){ showErr(authErr,'password reset works on the live site.'); return; }
+  if(!supabase){ showErr(authErr,'server not configured yet.'); return; }
+  try{
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+    if(error) throw error;
+    authErr.classList.remove('show');
+    authSub.textContent = '📩 reset link sent — check your email.';
+  }catch(ex){ showErr(authErr,(ex&&ex.message)?ex.message.toLowerCase():'couldn’t send reset link.'); }
+});
+
+// magic link → email a passwordless login link
+$('magic-btn').addEventListener('click', async ()=>{
+  clearErr(authErr);
+  const email=emailIn.value.trim();
+  if(!email){ showErr(authErr,'enter your email, then tap the login-link button.'); emailIn.focus(); return; }
+  if(DEMO){ showErr(authErr,'magic links work on the live site.'); return; }
+  if(!supabase){ showErr(authErr,'server not configured yet.'); return; }
+  try{
+    const { error } = await supabase.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.origin } });
+    if(error) throw error;
+    authErr.classList.remove('show');
+    authSub.textContent = '📩 login link sent — check your email.';
+  }catch(ex){ showErr(authErr,(ex&&ex.message)?ex.message.toLowerCase():'couldn’t send login link.'); }
+});
+
+// reset screen → set the new password
+resetForm.addEventListener('submit', async (e)=>{
+  e.preventDefault(); clearErr(resetErr);
+  const p1=resetPass.value, p2=resetPass2.value;
+  if(!p1||p1.length<6){ showErr(resetErr,'password must be at least 6 characters.'); return; }
+  if(p1!==p2){ showErr(resetErr,'passwords don’t match.'); return; }
+  if(!supabase){ showErr(resetErr,'server not configured yet.'); return; }
+  resetBtn.disabled=true;
+  try{
+    const { error } = await supabase.auth.updateUser({ password:p1 });
+    if(error) throw error;
+    recovering=false;
+    resetGate.classList.add('hide');
+    await refreshBalance(); glitch(gateMark); enterHub();
+  }catch(ex){
+    resetGate.classList.remove('shake'); void resetGate.offsetWidth; resetGate.classList.add('shake');
+    showErr(resetErr,(ex&&ex.message)?ex.message.toLowerCase():'couldn’t update password.');
+  }finally{ resetBtn.disabled=false; }
+});
+
 renderTools();
 (async function init(){
   if(DEMO){ showAuth(); return; }
   if(!supabase){ showErr(authErr,'server keys not set yet.'); showAuth(); return; }
+  // if this page load is a password-recovery link, wait for the RECOVERY event — don't auto-login
+  const isRecoveryLink = /type=recovery/.test(window.location.hash) || /type=recovery/.test(window.location.search);
   const { data } = await supabase.auth.getSession();
-  if(data.session){ session=data.session; await refreshBalance(); enterHub(); } else showAuth();
-  supabase.auth.onAuthStateChange(async (_e,s)=>{
+  if(isRecoveryLink){ recovering=true; showAuth(); }
+  else if(data.session){ session=data.session; await refreshBalance(); enterHub(); }
+  else showAuth();
+  supabase.auth.onAuthStateChange(async (evt,s)=>{
+    // password recovery: user clicked the reset link — show the reset screen, don't log in
+    if(evt==='PASSWORD_RECOVERY'){
+      recovering=true; session=s;
+      gate.classList.add('hide'); topbar.hidden=true;
+      resetGate.classList.remove('hide');
+      setTimeout(()=>resetPass.focus(),100);
+      return;
+    }
+    if(recovering) return;   // ignore other events while on the reset screen
     session=s;
     if(s){ await refreshBalance(); enterHub(); }
   });
