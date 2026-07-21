@@ -216,6 +216,39 @@
     font-family:'Archivo',sans-serif;font-size:14.5px;line-height:1.7;color:var(--text);
     opacity:0;animation:hookIn .35s ease forwards;white-space:pre-wrap}
   .ad-answer strong{color:var(--red-bright);font-weight:700}
+  /* Content Planner */
+  .pl-days{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .pl-day{background:var(--bg-soft);border:1px solid var(--line);color:var(--muted);border-radius:100px;
+    padding:9px 18px;font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all .15s}
+  .pl-day:hover{border-color:var(--red)}
+  .pl-day.active{background:rgba(229,57,44,.10);border-color:var(--red);color:var(--text)}
+  .pl-saved{margin-top:30px;display:flex;flex-direction:column;gap:16px}
+  .pl-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .pl-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;
+    border-bottom:1px solid var(--line-soft);cursor:pointer}
+  .pl-head:hover{background:rgba(229,57,44,.04)}
+  .pl-head h3{font-family:'Archivo',sans-serif;font-weight:800;font-size:15px}
+  .pl-head .pl-meta{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-top:3px}
+  .pl-head-r{display:flex;align-items:center;gap:10px;flex:none}
+  .pl-prog{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--red-bright)}
+  .pl-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px;line-height:1}
+  .pl-del:hover{color:var(--red-bright)}
+  .pl-body{display:none;padding:8px 18px 18px}
+  .pl-card.open .pl-body{display:block}
+  .pl-day-row{padding:12px 0;border-bottom:1px solid var(--line-soft)}
+  .pl-day-row:last-child{border-bottom:none}
+  .pl-day-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .pl-slot{display:flex;align-items:flex-start;gap:11px;padding:9px 0}
+  .pl-check{flex:none;width:20px;height:20px;border:1.5px solid var(--line);border-radius:6px;cursor:pointer;margin-top:2px;
+    display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .pl-check:hover{border-color:var(--red)}
+  .pl-check.on{background:var(--red);border-color:var(--red)}
+  .pl-check.on::after{content:"\2713";color:#fff;font-size:13px;font-weight:700}
+  .pl-slot-txt{flex:1;font-size:14px;line-height:1.5}
+  .pl-slot.done .pl-slot-txt{opacity:.5;text-decoration:line-through}
+  .pl-fmt{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red-bright);
+    background:rgba(229,57,44,.08);border-radius:5px;padding:2px 7px;margin-top:5px}
+  .pl-empty{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:13px;text-align:center;padding:20px}
   #ad-question{width:100%;background:transparent;border:none;outline:none;resize:vertical;color:var(--text);
     font-family:'Archivo',sans-serif;font-size:15px;line-height:1.65;min-height:96px}
   #ad-question::placeholder{color:var(--muted);opacity:.5;font-family:'JetBrains Mono',monospace;font-size:13.5px}
@@ -684,6 +717,36 @@
       <div class="sg-result" id="ad-result"></div>
     </section>
 
+    <section class="view" id="view-planner">
+      <button class="back" data-back>&#8592; back to tools</button>
+      <h1 class="glitch" id="pl-mark"><span class="mark-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg></span>PLANNER<span class="dot-red">.</span></h1>
+      <p class="sub">generate a posting plan, save it, and <b>check off</b> posts as you ship them.</p>
+      <div class="cost-badge">&#9889; 4 credits per plan</div>
+      <form id="pl-form" autocomplete="off">
+        <div class="hg-field">
+          <input id="pl-topic" type="text" placeholder="what's your content about? (e.g. faceless sweepstakes offers on tiktok)" aria-label="Topic" style="width:100%;background:transparent;border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px" />
+        </div>
+        <div class="pl-days" id="pl-days">
+          <button type="button" class="pl-day" data-days="3">3 days</button>
+          <button type="button" class="pl-day active" data-days="7">7 days</button>
+          <button type="button" class="pl-day" data-days="14">14 days</button>
+          <button type="button" class="pl-day" data-days="30">30 days</button>
+        </div>
+        <div class="hg-row" style="margin-top:12px;justify-content:flex-end">
+          <button class="grab" id="pl-go" type="submit">
+            <span>generate plan</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <div class="err" id="pl-err" role="alert"></div>
+      </form>
+      <div class="oos" id="pl-oos">
+        <p><b>out of credits.</b> grab more to keep planning.</p>
+        <button class="sub-btn" id="pl-sub-btn">get more &#8594;</button>
+      </div>
+      <div class="pl-saved" id="pl-saved"></div>
+    </section>
+
     <footer>
       <span>exposure club toolkit</span>
       <span>powered by Exposure Club</span>
@@ -737,9 +800,9 @@ const TOOLS = [
   { id:'cliptoolkit', mono:'CT', name:'Clip Toolkit', status:'soon', cost:2,
     blurb:'Trim, reframe to vertical, burn captions, export clean.',
     bullets:['1080p MP4','TikTok captions','Emoji picker'] },
-  { id:'planner', mono:'CP', name:'Content Planner', status:'soon', cost:1,
-    blurb:'Plan your posting like a system, not a guess.',
-    bullets:['Calendar view','Batch slots','Reminders'] },
+  { id:'planner', mono:'CP', name:'Content Planner', status:'live', cost:4,
+    blurb:'Generate a posting plan, save it, check off as you post.',
+    bullets:['3 / 7 / 14 / 30 days','2 ideas per day','Track what you posted'] },
   { id:'downloader', mono:'YK', name:'YOINK Downloader', status:'live', cost:1,
     blurb:'Free bonus — grab TikTok & Instagram clips, zero watermark.',
     bullets:['TikTok · Instagram','MP4 + audio-only','No watermark'] },
@@ -773,6 +836,7 @@ function showView(name){
   if(name==='hookgen' && hgExamples) setTimeout(()=>hgExamples.focus(),120);
   if(name==='ugc' && sgTopic) setTimeout(()=>sgTopic.focus(),120);
   if(name==='advisor' && adQuestion) setTimeout(()=>adQuestion.focus(),120);
+  if(name==='planner'){ if(plTopic) setTimeout(()=>plTopic.focus(),120); loadPlans(); }
 }
 function enterHub(){ hideLanding(); gate.classList.add('hide'); topbar.hidden=false; showView('dashboard'); }
 function showAuth(){ hideLanding(); gate.classList.remove('hide'); topbar.hidden=true; setTimeout(()=>emailIn.focus(),100); }
@@ -812,7 +876,7 @@ function renderTools(){
       +'<div class="cost">'+t.cost+' credit'+(t.cost>1?'s':'')+' / use</div>'+btn+'</article>';
   }).join('');
   toolsGrid.querySelectorAll('.launch[data-tool]').forEach(b=>{
-    b.addEventListener('click',()=>{ const t=b.dataset.tool; if(t==='downloader') showView('downloader'); else if(t==='hookgen') showView('hookgen'); else if(t==='ugc') showView('ugc'); else if(t==='advisor') showView('advisor'); });
+    b.addEventListener('click',()=>{ const t=b.dataset.tool; if(t==='downloader') showView('downloader'); else if(t==='hookgen') showView('hookgen'); else if(t==='ugc') showView('ugc'); else if(t==='advisor') showView('advisor'); else if(t==='planner') showView('planner'); });
   });
 }
 
@@ -1140,6 +1204,121 @@ function renderAnswer(answer){
   });
 }
 
+// ---- Content Planner ----
+const PL_COST = (TOOLS.find(t=>t.id==='planner')||{cost:4}).cost;
+const plForm=$('pl-form'), plTopic=$('pl-topic'), plGo=$('pl-go'),
+      plErr=$('pl-err'), plSaved=$('pl-saved'), plOos=$('pl-oos');
+let plDays=7, plLoaded=false;
+
+document.querySelectorAll('.pl-day').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.pl-day').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    plDays=parseInt(btn.dataset.days,10)||7;
+  });
+});
+
+$('pl-sub-btn')&&$('pl-sub-btn').addEventListener('click',()=>openPricing&&openPricing());
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function plToken(){ return session&&session.access_token; }
+
+plForm&&plForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  clearErr(plErr); plOos.classList.remove('show');
+  const topic=plTopic.value.trim();
+  if(!topic){ showErr(plErr,'tell it what your content is about first.'); return; }
+
+  plGo.disabled=true;
+  const oldLabel=plGo.querySelector('span').textContent;
+  plGo.querySelector('span').textContent='building…';
+  try{
+    if(DEMO){
+      showErr(plErr,'planner works on the live site.');
+    } else {
+      const r=await fetch('/api/plan/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(plToken()||'')},body:JSON.stringify({topic,days:plDays})});
+      if(!r.ok){ let m='couldn\u2019t generate. try again.'; let code=r.status; try{ m=(await r.json()).error||m; }catch(_){} const er=new Error(m); er.code=code; throw er; }
+      const data=await r.json();
+      if(data.creditsLeft!=null) setCredits(data.creditsLeft); else await refreshBalance();
+      plTopic.value='';
+      await loadPlans();  // refresh the saved list (new one appears on top, opened)
+    }
+  }catch(ex){
+    if(ex.code===402){ plOos.classList.add('show'); setCredits(0); }
+    else showErr(plErr, ex.message||'something went wrong. try again.');
+  }finally{ plGo.disabled=false; plGo.querySelector('span').textContent=oldLabel; }
+});
+
+async function loadPlans(openFirst){
+  if(DEMO){ plSaved.innerHTML='<div class="pl-empty">saved plans show on the live site.</div>'; return; }
+  try{
+    const r=await fetch('/api/plan/list',{headers:{'Authorization':'Bearer '+(plToken()||'')}});
+    if(!r.ok) throw new Error('load failed');
+    const data=await r.json();
+    renderPlans(data.plans||[]);
+    plLoaded=true;
+  }catch(ex){ plSaved.innerHTML='<div class="pl-empty">couldn\u2019t load your plans.</div>'; }
+}
+
+function planProgress(plan){
+  let done=0,total=0;
+  (plan||[]).forEach(d=>(d.slots||[]).forEach(s=>{ total++; if(s.posted) done++; }));
+  return {done,total};
+}
+
+function renderPlans(plans){
+  if(!plans.length){ plSaved.innerHTML='<div class="pl-empty">no plans yet — generate your first one above.</div>'; return; }
+  plSaved.innerHTML = plans.map((p,pi)=>{
+    const days=Array.isArray(p.plan)?p.plan:[];
+    const {done,total}=planProgress(days);
+    const openCls = pi===0 ? ' open' : '';
+    const body = days.map((d,di)=>{
+      const slots=(d.slots||[]).map((s,si)=>{
+        const on=s.posted?' on':'', done=s.posted?' done':'';
+        return '<div class="pl-slot'+done+'"><div class="pl-check'+on+'" data-plan="'+p.id+'" data-day="'+di+'" data-slot="'+si+'"></div>'
+          +'<div class="pl-slot-txt">'+esc(s.text)+(s.format?'<br><span class="pl-fmt">'+esc(s.format)+'</span>':'')+'</div></div>';
+      }).join('');
+      return '<div class="pl-day-row"><div class="pl-day-label">'+esc(d.date||('day '+(di+1)))+'</div>'+slots+'</div>';
+    }).join('');
+    return '<div class="pl-card'+openCls+'" data-card="'+p.id+'">'
+      +'<div class="pl-head"><div><h3>'+esc(p.title)+'</h3><div class="pl-meta">'+p.days+' days · created '+String(p.created_at||'').slice(0,10)+'</div></div>'
+      +'<div class="pl-head-r"><span class="pl-prog">'+done+'/'+total+' posted</span><button class="pl-del" data-del="'+p.id+'" title="delete">&#10005;</button></div></div>'
+      +'<div class="pl-body">'+body+'</div></div>';
+  }).join('');
+
+  // expand/collapse
+  plSaved.querySelectorAll('.pl-head').forEach(h=>{
+    h.addEventListener('click',(e)=>{
+      if(e.target.closest('.pl-del')) return;
+      h.parentElement.classList.toggle('open');
+    });
+  });
+  // toggle posted
+  plSaved.querySelectorAll('.pl-check').forEach(c=>{
+    c.addEventListener('click', async ()=>{
+      const planId=c.dataset.plan, dayIdx=+c.dataset.day, slotIdx=+c.dataset.slot;
+      c.classList.toggle('on');
+      c.closest('.pl-slot').classList.toggle('done');
+      try{
+        await fetch('/api/plan/toggle',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(plToken()||'')},body:JSON.stringify({planId,dayIdx,slotIdx})});
+        await loadPlans();  // refresh progress counts
+      }catch(_){}
+    });
+  });
+  // delete
+  plSaved.querySelectorAll('.pl-del').forEach(b=>{
+    b.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      if(!confirm('Delete this plan? This can\u2019t be undone.')) return;
+      const planId=b.dataset.del;
+      try{
+        await fetch('/api/plan/delete',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(plToken()||'')},body:JSON.stringify({planId})});
+        await loadPlans();
+      }catch(_){}
+    });
+  });
+}
+
 
 let balanceBeforeCheckout=null;   // snapshot taken when checkout opens
 function initPaddle(){
@@ -1329,8 +1508,19 @@ renderTools();
       return;
     }
     if(recovering) return;   // ignore other events while on the reset screen
+
+    // TOKEN_REFRESHED / re-emitted SIGNED_IN fire when the tab regains focus.
+    // If we're already logged in and in the app, just update the session
+    // silently — don't re-route the user back to the hub/landing.
+    const wasLoggedIn = !!session;
     session=s;
-    if(s){ await refreshBalance(); enterHub(); }
+    if(s){
+      if(wasLoggedIn){ return; }         // already in the app — don't reset the view
+      await refreshBalance(); enterHub(); // genuine fresh sign-in
+    } else {
+      // signed out
+      showLanding();
+    }
   });
 })();
 </script>
