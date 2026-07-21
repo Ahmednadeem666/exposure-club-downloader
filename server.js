@@ -42,8 +42,9 @@ const SCRIPT_MODEL = 'claude-haiku-4-5';
 const MAX_TOPIC_CHARS = 600;
 
 // AI Affiliate Advisor (chatbot Q&A)
-const ADVISOR_COST = 1;                  // credits per question
-const ADVISOR_MODEL = 'claude-sonnet-4-6';  // smarter answers for expert advice
+// AI Agent (conversational)
+const AGENT_COST = 1;                     // credits per message sent
+const AGENT_MODEL = 'claude-sonnet-4-6';  // sharper advice
 const MAX_QUESTION_CHARS = 1500;
 
 // Content Planner
@@ -489,36 +490,51 @@ Respond with ONLY the script, using the labeled beats above (HOOK / BODY / CTA).
   }
 });
 
-app.post('/api/advisor', async (req, res) => {
-  try {
-    if (!supabase) return res.status(500).json({ error: 'accounts not configured on the server yet.' });
-    if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'advisor not configured yet.' });
-
-    // 1) must be logged in
-    const user = await getUser(req);
-    if (!user) return res.status(401).json({ error: 'please log in.' });
-
-    // 2) validate input
-    const question = (req.body && req.body.question ? String(req.body.question) : '').trim();
-    if (!question) return res.status(400).json({ error: 'ask a question first.' });
-    if (question.length > MAX_QUESTION_CHARS) return res.status(400).json({ error: 'keep the question a bit shorter.' });
-
-    // 3) spend credits up front (atomic)
-    const { data: ok, error: cErr } = await supabase.rpc('spend_credits', { p_user: user.id, p_amount: ADVISOR_COST });
-    if (cErr) return res.status(500).json({ error: 'credit check failed — try again.' });
-    if (!ok) return res.status(402).json({ error: 'out of credits' });
-
-    const refund = async () => { try { await supabase.rpc('add_credits', { p_user: user.id, p_amount: ADVISOR_COST }); } catch (_) {} };
-
-    const system = `You are the Exposure Club AI Affiliate Advisor — a seasoned expert in affiliate and CPA marketing, especially TikTok organic. You know the space deeply: CPA networks, sweepstakes and CPI offers, faceless slideshow content, TikTok organic growth, traffic sources, offer selection, landing pages, compliance, tracking, and scaling. You advise like a sharp, experienced marketer talking to a fellow marketer — direct, practical, specific, no fluff.
+// ---- AI Agent (conversational, saved history) ----
+const AGENT_SYSTEM = `You are the Exposure Club AI Agent — a seasoned expert in affiliate and CPA marketing, especially TikTok organic. You know the space deeply: CPA networks, sweepstakes and CPI offers, faceless slideshow content, TikTok organic growth, traffic sources, offer selection, landing pages, compliance, tracking, and scaling. You advise like a sharp, experienced marketer talking to a fellow marketer — direct, practical, specific, no fluff.
 
 Rules:
 - Give actionable, specific advice — real tactics, not generic platitudes. Assume the person knows the basics.
 - Match the casual, no-BS tone of the affiliate space. Be concise but complete.
 - If something is risky, gray-hat, or against a network's/platform's terms, say so honestly rather than pretending — but still be helpful about legitimate approaches.
 - Never help with anything outright illegal (fraud, fake leads, cookie stuffing, incentivized traffic where prohibited, etc.). Redirect to legitimate tactics.
-- If a question is vague, give the best general answer AND note what detail would sharpen it.
+- You remember the conversation so far — build on it naturally, like a real chat.
 - Format for readability: short paragraphs, and use bullet points when listing tactics or steps.`;
+
+// Send a message in a chat (creates the chat if no chatId). Spends 1 credit, remembers history.
+app.post('/api/agent/send', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured on the server yet.' });
+    if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'agent not configured yet.' });
+
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+
+    const message = (req.body && req.body.message ? String(req.body.message) : '').trim();
+    let chatId = req.body && req.body.chatId ? String(req.body.chatId) : '';
+    if (!message) return res.status(400).json({ error: 'type a message first.' });
+    if (message.length > MAX_QUESTION_CHARS) return res.status(400).json({ error: 'keep the message a bit shorter.' });
+
+    // load existing chat history (RLS ensures it's the user's own), or start fresh
+    let history = [];
+    let existing = null;
+    if (chatId) {
+      const { data: row } = await supabase
+        .from('agent_chats').select('*').eq('id', chatId).eq('user_id', user.id).single();
+      if (row) { existing = row; history = Array.isArray(row.messages) ? row.messages : []; }
+      else chatId = ''; // not found — treat as new
+    }
+
+    // spend 1 credit per message
+    const { data: ok, error: cErr } = await supabase.rpc('spend_credits', { p_user: user.id, p_amount: AGENT_COST });
+    if (cErr) return res.status(500).json({ error: 'credit check failed — try again.' });
+    if (!ok) return res.status(402).json({ error: 'out of credits' });
+
+    const refund = async () => { try { await supabase.rpc('add_credits', { p_user: user.id, p_amount: AGENT_COST }); } catch (_) {} };
+
+    // build the full message list for Claude: prior history + new user message
+    const apiMessages = history.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.text || '') }));
+    apiMessages.push({ role: 'user', content: message });
 
     let r;
     try {
@@ -530,29 +546,46 @@ Rules:
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: ADVISOR_MODEL,
+          model: AGENT_MODEL,
           max_tokens: 1500,
-          system,
-          messages: [{ role: 'user', content: question }],
+          system: AGENT_SYSTEM,
+          messages: apiMessages,
         }),
       });
     } catch (e) {
       await refund();
-      return res.status(502).json({ error: 'couldn\u2019t reach the advisor. Try again — your credits were not charged.' });
+      return res.status(502).json({ error: 'couldn\u2019t reach the agent. Try again — your credits were not charged.' });
     }
 
     if (!r.ok) {
       const errText = await r.text().catch(() => '');
       console.error('Anthropic API error:', errText);
       await refund();
-      return res.status(502).json({ error: 'the advisor failed. Try again — your credits were not charged.' });
+      return res.status(502).json({ error: 'the agent failed. Try again — your credits were not charged.' });
     }
 
     const data = await r.json();
-    let answer = (data.content || []).map((i) => (i.type === 'text' ? i.text : '')).join('').trim();
+    const answer = (data.content || []).map((i) => (i.type === 'text' ? i.text : '')).join('').trim();
     if (!answer) {
       await refund();
       return res.status(502).json({ error: 'got an empty response. Try again — your credits were not charged.' });
+    }
+
+    // append both messages to history and save
+    const newHistory = history.concat([{ role: 'user', text: message }, { role: 'assistant', text: answer }]);
+
+    let savedId = chatId;
+    if (existing) {
+      await supabase.from('agent_chats')
+        .update({ messages: newHistory, updated_at: new Date().toISOString() })
+        .eq('id', chatId).eq('user_id', user.id);
+    } else {
+      const title = message.length > 44 ? message.slice(0, 44) + '\u2026' : message;
+      const { data: created, error: insErr } = await supabase.from('agent_chats')
+        .insert({ user_id: user.id, title, messages: newHistory })
+        .select().single();
+      if (insErr) { console.error('chat insert error:', insErr); }
+      else savedId = created.id;
     }
 
     let creditsLeft = null;
@@ -561,10 +594,63 @@ Rules:
       if (prof) creditsLeft = prof.credits;
     } catch (_) {}
 
-    return res.json({ answer, creditsLeft });
+    return res.json({ answer, chatId: savedId, creditsLeft });
   } catch (e) {
-    console.error('advisor handler error:', e);
+    console.error('agent send error:', e);
     return res.status(500).json({ error: 'something went wrong. Try again.' });
+  }
+});
+
+// List the user's chats (most recent first) — id, title, updated_at only.
+app.get('/api/agent/list', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured.' });
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+    const { data, error } = await supabase
+      .from('agent_chats').select('id, title, updated_at')
+      .eq('user_id', user.id).order('updated_at', { ascending: false });
+    if (error) return res.status(500).json({ error: 'couldn\u2019t load your chats.' });
+    return res.json({ chats: data || [] });
+  } catch (e) {
+    console.error('agent list error:', e);
+    return res.status(500).json({ error: 'something went wrong.' });
+  }
+});
+
+// Get one chat's full messages.
+app.get('/api/agent/get', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured.' });
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+    const chatId = req.query && req.query.id ? String(req.query.id) : '';
+    if (!chatId) return res.status(400).json({ error: 'bad request.' });
+    const { data, error } = await supabase
+      .from('agent_chats').select('*').eq('id', chatId).eq('user_id', user.id).single();
+    if (error || !data) return res.status(404).json({ error: 'chat not found.' });
+    return res.json({ chat: data });
+  } catch (e) {
+    console.error('agent get error:', e);
+    return res.status(500).json({ error: 'something went wrong.' });
+  }
+});
+
+// Delete a chat.
+app.post('/api/agent/delete', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured.' });
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+    const chatId = req.body && req.body.chatId ? String(req.body.chatId) : '';
+    if (!chatId) return res.status(400).json({ error: 'bad request.' });
+    const { error } = await supabase
+      .from('agent_chats').delete().eq('id', chatId).eq('user_id', user.id);
+    if (error) return res.status(500).json({ error: 'couldn\u2019t delete.' });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('agent delete error:', e);
+    return res.status(500).json({ error: 'something went wrong.' });
   }
 });
 
