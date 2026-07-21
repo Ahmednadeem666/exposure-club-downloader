@@ -360,9 +360,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 /* CONFIG — set DEMO=false and paste your Supabase Project URL + anon key when deploying.
    The anon key is safe here. NEVER paste the service_role key. */
-const DEMO = true;
-const SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY";
+const DEMO = false;
+const SUPABASE_URL = "https://blswxegpijwkphrwutov.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_owa2MAxEX64TqfOqd5cVsg_V43acaXZ";
 const supabase = (!DEMO && SUPABASE_URL.startsWith('http')) ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 const $ = (id)=>document.getElementById(id);
