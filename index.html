@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 <style>
   :root{
     --bg:#0B0708;--bg-soft:#0F0A0B;--card:#140C0E;--card-2:#180F11;
@@ -207,6 +208,29 @@
   .forgot button{background:none;border:none;color:var(--muted);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:12px;text-decoration:underline;padding:0}
   .forgot button:hover{color:var(--red)}
   .soon{opacity:.5;cursor:not-allowed}
+  /* pricing modal */
+  .pm-overlay{position:fixed;inset:0;background:rgba(4,2,3,.82);backdrop-filter:blur(4px);z-index:60;display:none;align-items:center;justify-content:center;padding:20px}
+  .pm-overlay.show{display:flex}
+  .pm{background:var(--card);border:1px solid var(--line-soft);border-radius:18px;max-width:760px;width:100%;max-height:90vh;overflow:auto;padding:28px}
+  .pm-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+  .pm-head h2{font-family:'Anton',sans-serif;font-size:30px;letter-spacing:.01em;color:var(--text);text-transform:uppercase}
+  .pm-head p{color:var(--muted);font-size:13px;margin-top:4px;font-family:'JetBrains Mono',monospace}
+  .pm-x{background:none;border:none;color:var(--muted);font-size:26px;cursor:pointer;line-height:1;padding:0 4px}
+  .pm-x:hover{color:var(--red)}
+  .pm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:20px}
+  .pm-card{border:1px solid var(--line-soft);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:6px;position:relative;transition:border-color .15s}
+  .pm-card:hover{border-color:var(--red)}
+  .pm-card.sub{border-color:var(--red);background:rgba(229,57,44,.06)}
+  .pm-tag{position:absolute;top:-9px;right:16px;background:var(--red);color:#fff;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:6px}
+  .pm-name{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .pm-cr{font-family:'Anton',sans-serif;font-size:34px;color:var(--text);line-height:1}
+  .pm-cr span{font-size:14px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+  .pm-price{font-family:'Archivo',sans-serif;font-weight:700;font-size:18px;color:var(--red-bright)}
+  .pm-price small{color:var(--muted);font-weight:400;font-size:13px}
+  .pm-buy{margin-top:10px;background:linear-gradient(180deg,var(--red-bright),var(--red));color:#1c0503;border:none;border-radius:9px;padding:12px 0;font-family:'Archivo',sans-serif;font-weight:800;font-size:14px;cursor:pointer;transition:filter .15s}
+  .pm-buy:hover{filter:brightness(1.08)}
+  .pm-note{margin-top:18px;text-align:center;color:var(--muted);font-size:12px;font-family:'JetBrains Mono',monospace}
+  @media(max-width:560px){.pm-grid{grid-template-columns:1fr}}
 
   @media (max-width:640px){
     .tools-grid{grid-template-columns:1fr}
@@ -223,6 +247,7 @@
   .brand .ec-logo{width:30px;height:30px;border-radius:8px}
   .wordmark-tag{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin:2px 0 22px}
 </style>
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 </head>
 <body>
   <div class="ticker" aria-hidden="true">
@@ -283,7 +308,7 @@
       <div class="brand"><span class="ec-logo" role="img" aria-label="Exposure Club"></span><span class="name">Exposure Club</span></div>
       <div class="nav-right">
         <span class="userchip" id="userchip" hidden>@<b id="user-name"></b></span>
-        <span class="credits" id="credits">&#9889; <b id="credit-num">0</b> <span class="c-label">credits</span></span>
+        <span class="credits" id="credits" style="cursor:pointer" title="Get more credits">&#9889; <b id="credit-num">0</b> <span class="c-label">credits</span> <span style="color:var(--red-bright);font-weight:700">+</span></span>
         <button class="logout" id="logout">log out</button>
       </div>
     </nav>
@@ -364,6 +389,16 @@ const DEMO = false;
 const SUPABASE_URL = "https://blswxegpijwkphrwutov.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_owa2MAxEX64TqfOqd5cVsg_V43acaXZ";
 const supabase = (!DEMO && SUPABASE_URL.startsWith('http')) ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+/* Paddle — client-side token is public/safe. Sandbox token starts with test_. */
+const PADDLE_TOKEN = "test_d5c3fa488dbc9958b010b1c653c";
+const PADDLE_ENV = "sandbox"; // change to "production" when going live
+const PADDLE_PRICES = [
+  { id:'pri_01ky203aynkbn4nmbpy8b826ss', kind:'sub',  name:'Monthly',     credits:500,  price:'$20', per:'/mo', tag:'best value' },
+  { id:'pri_01ky208wwrjcj64e7h1tqw4g4r', kind:'pack', name:'Large Pack',  credits:1200, price:'$45', per:'',    tag:'' },
+  { id:'pri_01ky2083pjbhfcm3drcbj283rw', kind:'pack', name:'Medium Pack', credits:500,  price:'$25', per:'',    tag:'' },
+  { id:'pri_01ky207bstp2d30q4bjjfpdznd', kind:'pack', name:'Small Pack',  credits:150,  price:'$10', per:'',    tag:'' },
+];
 
 const $ = (id)=>document.getElementById(id);
 
@@ -543,7 +578,69 @@ function demoFetch(url,opts){
   });
 }
 
-$('sub-btn').addEventListener('click',()=>showErr(err,'subscriptions launch next — hang tight.'));
+// ---- Paddle pricing + checkout ----
+let paddleReady=false;
+function initPaddle(){
+  if(paddleReady || DEMO || typeof Paddle==='undefined') return;
+  try{
+    if(PADDLE_ENV==='sandbox') Paddle.Environment.set('sandbox');
+    Paddle.Initialize({
+      token: PADDLE_TOKEN,
+      eventCallback: (ev)=>{
+        // when checkout completes, refresh the balance after a moment
+        if(ev && (ev.name==='checkout.completed')){
+          setTimeout(refreshBalance, 2500);
+          setTimeout(refreshBalance, 6000);
+        }
+      }
+    });
+    paddleReady=true;
+  }catch(e){ console.error('paddle init failed', e); }
+}
+
+const pmOverlay=$('pm-overlay'), pmGrid=$('pm-grid');
+function renderPricing(){
+  pmGrid.innerHTML='';
+  PADDLE_PRICES.forEach(p=>{
+    const card=document.createElement('div');
+    card.className='pm-card'+(p.kind==='sub'?' sub':'');
+    card.innerHTML =
+      (p.tag?`<div class="pm-tag">${p.tag}</div>`:'')+
+      `<div class="pm-name">${p.name}</div>`+
+      `<div class="pm-cr">${p.credits}<span> credits${p.per}</span></div>`+
+      `<div class="pm-price">${p.price}<small>${p.per}</small></div>`+
+      `<button class="pm-buy" data-price="${p.id}">${p.kind==='sub'?'subscribe':'buy'} &#8594;</button>`;
+    pmGrid.appendChild(card);
+  });
+  pmGrid.querySelectorAll('.pm-buy').forEach(b=>{
+    b.addEventListener('click', ()=>openCheckout(b.getAttribute('data-price')));
+  });
+}
+function openPricing(){
+  if(DEMO){ showErr(err,'checkout works on the live site.'); return; }
+  initPaddle();
+  renderPricing();
+  pmOverlay.classList.add('show');
+}
+function closePricing(){ pmOverlay.classList.remove('show'); }
+
+function openCheckout(priceId){
+  if(!session || !session.user){ showErr(err,'please log in first.'); return; }
+  if(typeof Paddle==='undefined'){ showErr(err,'checkout still loading — try again in a sec.'); return; }
+  initPaddle();
+  const email = session.user.email || undefined;
+  Paddle.Checkout.open({
+    items:[{ priceId, quantity:1 }],
+    customer: email ? { email } : undefined,
+    customData:{ user_id: session.user.id },   // <-- server reads this in the webhook
+    settings:{ theme:'dark', displayMode:'overlay', successUrl: window.location.origin }
+  });
+}
+
+$('sub-btn').addEventListener('click', openPricing);
+$('credits').addEventListener('click', openPricing);
+$('pm-close').addEventListener('click', closePricing);
+pmOverlay.addEventListener('click', (e)=>{ if(e.target===pmOverlay) closePricing(); });
 
 const redeemBtn=$('redeem-btn'), redeemCode=$('redeem-code'), redeemMsg=$('redeem-msg');
 function showRedeemMsg(msg,kind){ redeemMsg.textContent=msg; redeemMsg.className='redeem-msg show '+(kind||''); }
@@ -652,5 +749,19 @@ renderTools();
   });
 })();
 </script>
+  <div class="pm-overlay" id="pm-overlay">
+    <div class="pm">
+      <div class="pm-head">
+        <div>
+          <h2>Get Credits</h2>
+          <p>subscribe for the best rate, or grab a one-time pack.</p>
+        </div>
+        <button class="pm-x" id="pm-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="pm-grid" id="pm-grid"></div>
+      <p class="pm-note">secure checkout by paddle &#183; credits stack onto your balance</p>
+    </div>
+  </div>
+
 </body>
 </html>
