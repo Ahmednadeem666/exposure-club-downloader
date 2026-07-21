@@ -154,6 +154,31 @@
   .sub-btn{background:linear-gradient(180deg,var(--red-bright),var(--red));color:#1c0503;border:none;border-radius:9px;
     padding:11px 16px;font-weight:800;cursor:pointer;font-family:'Archivo',sans-serif;font-size:14px}
 
+  /* Hook Generator */
+  .hg-field{background:var(--bg-soft);border:1px solid var(--line);border-radius:var(--r);padding:14px;transition:border-color .15s}
+  .hg-field:focus-within{border-color:var(--red)}
+  #hg-examples{width:100%;background:transparent;border:none;outline:none;resize:vertical;color:var(--text);
+    font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.7;min-height:130px}
+  #hg-examples::placeholder{color:var(--muted);opacity:.55}
+  .hg-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:12px}
+  .hg-hint{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+  .hg-hint.over{color:var(--red-bright)}
+  .hg-results{margin-top:26px;display:grid;gap:10px}
+  .hook{position:relative;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:15px 46px 15px 16px;
+    font-size:15px;line-height:1.5;cursor:pointer;transition:border-color .15s,background .15s;opacity:0;transform:translateY(6px);
+    animation:hookIn .32s ease forwards}
+  .hook:hover{border-color:var(--red);background:var(--card-2,#180F11)}
+  .hook .cpy{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--muted);transition:color .15s}
+  .hook:hover .cpy{color:var(--red-bright)}
+  .hook.copied{border-color:var(--red-bright)}
+  .hook.copied::after{content:'copied';position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red-bright)}
+  .hook.copied .cpy{display:none}
+  @keyframes hookIn{to{opacity:1;transform:translateY(0)}}
+  .hg-loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:13px;margin-top:8px}
+  .hg-spin{width:15px;height:15px;border:2px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
   .stage{margin-top:26px}
   .card{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
     opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .35s,transform .35s}
@@ -512,6 +537,30 @@
       </div>
     </section>
 
+    <section class="view" id="view-hookgen">
+      <button class="back" data-back>&#8592; back to tools</button>
+      <h1 class="glitch" id="hg-mark">HOOKS<span class="dot-red">.</span></h1>
+      <p class="sub">paste a few hooks that <b>crushed</b> &#8212; get 8 fresh ones in the same voice. <b>3 credits</b> a gen.</p>
+      <form id="hg-form" autocomplete="off">
+        <div class="hg-field">
+          <textarea id="hg-examples" rows="6" placeholder="paste 3-8 of your best hooks, one per line&#8230;&#10;&#10;pov: you found the app that actually pays&#10;i quit my 9-5 because of this&#10;nobody talks about this side hustle" aria-label="Example hooks"></textarea>
+          <div class="hg-row">
+            <span class="hg-hint" id="hg-count">0 / 4000</span>
+            <button class="grab" id="hg-go" type="submit">
+              <span>generate</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="err" id="hg-err" role="alert"></div>
+      </form>
+      <div class="oos" id="hg-oos">
+        <p><b>out of credits.</b> grab more to keep generating.</p>
+        <button class="sub-btn" id="hg-sub-btn">get more &#8594;</button>
+      </div>
+      <div class="hg-results" id="hg-results"></div>
+    </section>
+
     <footer>
       <span>exposure club toolkit</span>
       <span>powered by yt-dlp</span>
@@ -529,13 +578,13 @@ const SUPABASE_ANON_KEY = "sb_publishable_owa2MAxEX64TqfOqd5cVsg_V43acaXZ";
 const supabase = (!DEMO && SUPABASE_URL.startsWith('http')) ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 /* Paddle — client-side token is public/safe. Sandbox token starts with test_. */
-const PADDLE_TOKEN = "test_d5c3fa488dbc9958b010b1c653c";
-const PADDLE_ENV = "sandbox"; // change to "production" when going live
+const PADDLE_TOKEN = "live_d10cf3ccc1b5b26a9351f152993";
+const PADDLE_ENV = "production"; // LIVE
 const PADDLE_PRICES = [
-  { id:'pri_01ky203aynkbn4nmbpy8b826ss', kind:'sub',  name:'Monthly',     credits:500,  price:'$20', per:'/mo', tag:'best value' },
-  { id:'pri_01ky208wwrjcj64e7h1tqw4g4r', kind:'pack', name:'Large Pack',  credits:1200, price:'$45', per:'',    tag:'' },
-  { id:'pri_01ky2083pjbhfcm3drcbj283rw', kind:'pack', name:'Medium Pack', credits:500,  price:'$25', per:'',    tag:'' },
-  { id:'pri_01ky207bstp2d30q4bjjfpdznd', kind:'pack', name:'Small Pack',  credits:150,  price:'$10', per:'',    tag:'' },
+  { id:'pri_01ky2aq85gkr2ner942j0qtscx', kind:'sub',  name:'Monthly',     credits:500,  price:'$20', per:'/mo', tag:'best value' },
+  { id:'pri_01ky2atnga4527k9j11r60nzwe', kind:'pack', name:'Large Pack',  credits:1200, price:'$45', per:'',    tag:'' },
+  { id:'pri_01ky2askzhjnebb9rt1szrghgy', kind:'pack', name:'Medium Pack', credits:500,  price:'$25', per:'',    tag:'' },
+  { id:'pri_01ky2artwzpkv4md2btc1g20qg', kind:'pack', name:'Small Pack',  credits:150,  price:'$10', per:'',    tag:'' },
 ];
 
 const $ = (id)=>document.getElementById(id);
@@ -545,7 +594,7 @@ const TOOLS = [
   { id:'downloader', mono:'YK', name:'YOINK Downloader', status:'live', cost:1,
     blurb:'Grab TikTok & Instagram — clean mp4 or mp3, zero watermark.',
     bullets:['TikTok · Instagram','MP4 + audio-only','No watermark'] },
-  { id:'hookgen', mono:'HG', name:'Hook Generator', status:'soon', cost:1,
+  { id:'hookgen', mono:'HG', name:'Hook Generator', status:'live', cost:3,
     blurb:'Feed it your winners, get fresh hooks in your own voice.',
     bullets:['Learns your style','8 hooks per gen','Tap to copy'] },
   { id:'cliptoolkit', mono:'CT', name:'Clip Toolkit', status:'soon', cost:2,
@@ -584,6 +633,7 @@ function showView(name){
   const v=$('view-'+name); if(v) v.classList.add('active');
   try{ window.scrollTo(0,0); }catch(_){}
   if(name==='downloader' && link) setTimeout(()=>link.focus(),120);
+  if(name==='hookgen' && hgExamples) setTimeout(()=>hgExamples.focus(),120);
 }
 function enterHub(){ hideLanding(); gate.classList.add('hide'); topbar.hidden=false; showView('dashboard'); }
 function showAuth(){ hideLanding(); gate.classList.remove('hide'); topbar.hidden=true; setTimeout(()=>emailIn.focus(),100); }
@@ -623,7 +673,7 @@ function renderTools(){
       +'<div class="cost">'+t.cost+' credit'+(t.cost>1?'s':'')+' / use</div>'+btn+'</article>';
   }).join('');
   toolsGrid.querySelectorAll('.launch[data-tool]').forEach(b=>{
-    b.addEventListener('click',()=>{ if(b.dataset.tool==='downloader') showView('downloader'); });
+    b.addEventListener('click',()=>{ const t=b.dataset.tool; if(t==='downloader') showView('downloader'); else if(t==='hookgen') showView('hookgen'); });
   });
 }
 
@@ -770,8 +820,68 @@ function demoFetch(url,opts){
   });
 }
 
-// ---- Paddle pricing + checkout ----
-let paddleReady=false;
+// ---- Hook Generator ----
+const HG_COST = (TOOLS.find(t=>t.id==='hookgen')||{cost:3}).cost;
+const hgForm=$('hg-form'), hgExamples=$('hg-examples'), hgGo=$('hg-go'),
+      hgErr=$('hg-err'), hgResults=$('hg-results'), hgOos=$('hg-oos'), hgCount=$('hg-count');
+
+hgExamples&&hgExamples.addEventListener('input',()=>{
+  const n=hgExamples.value.length;
+  hgCount.textContent=n+' / 4000';
+  hgCount.classList.toggle('over', n>4000);
+});
+
+$('hg-sub-btn')&&$('hg-sub-btn').addEventListener('click',()=>openPricing&&openPricing());
+
+hgForm&&hgForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  clearErr(hgErr); hgOos.classList.remove('show');
+  const examples=hgExamples.value.trim();
+  if(!examples){ showErr(hgErr,'add a few example hooks first — that\u2019s what it generates from.'); return; }
+  if(examples.length>4000){ showErr(hgErr,'too many examples — trim it down a bit.'); return; }
+
+  hgGo.disabled=true; hgResults.innerHTML='<div class="hg-loading"><span class="hg-spin"></span>studying your voice &amp; writing 8 fresh hooks&#8230;</div>';
+  try{
+    let data;
+    if(DEMO){
+      if(demoCredits<HG_COST){ const er=new Error('out of credits'); er.code=402; throw er; }
+      await new Promise(r=>setTimeout(r,1400));
+      demoCredits-=HG_COST; setCredits(demoCredits);
+      data={ hooks:['pov: you finally found the offer that actually pays','nobody talks about this but it changed everything','i was today years old when i learned this','the app they don\u2019t want you to know about','this is your sign to stop scrolling and start earning','how i went from broke to booked in 30 days','watch this before you waste another dollar','the side hustle nobody is gatekeeping anymore'], creditsLeft:demoCredits };
+    } else {
+      const token=session&&session.access_token;
+      const r=await fetch('/api/hooks',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({examples})});
+      if(!r.ok){ let m='couldn\u2019t generate. try again.'; let code=r.status; try{ m=(await r.json()).error||m; }catch(_){} const er=new Error(m); er.code=code; throw er; }
+      data=await r.json();
+    }
+    if(data.creditsLeft!=null) setCredits(data.creditsLeft); else await refreshBalance();
+    renderHooks(data.hooks||[]);
+  }catch(ex){
+    hgResults.innerHTML='';
+    if(ex.code===402){ hgOos.classList.add('show'); setCredits(0); }
+    else showErr(hgErr, ex.message||'something went wrong. try again.');
+  }finally{ hgGo.disabled=false; }
+});
+
+function renderHooks(hooks){
+  if(!hooks.length){ hgResults.innerHTML=''; showErr(hgErr,'got an empty response. try again.'); return; }
+  hgResults.innerHTML = hooks.map((h,i)=>{
+    const safe=String(h).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return '<div class="hook" data-hook="'+encodeURIComponent(h)+'" style="animation-delay:'+(i*45)+'ms">'+safe
+      +'<svg class="cpy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>';
+  }).join('');
+  hgResults.querySelectorAll('.hook').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const txt=decodeURIComponent(el.dataset.hook);
+      navigator.clipboard&&navigator.clipboard.writeText(txt);
+      hgResults.querySelectorAll('.hook.copied').forEach(x=>x.classList.remove('copied'));
+      el.classList.add('copied');
+      setTimeout(()=>el.classList.remove('copied'),1400);
+    });
+  });
+}
+
+
 let balanceBeforeCheckout=null;   // snapshot taken when checkout opens
 function initPaddle(){
   if(paddleReady || DEMO || typeof Paddle==='undefined') return;
@@ -781,7 +891,6 @@ function initPaddle(){
       token: PADDLE_TOKEN,
       eventCallback: (ev)=>{
         if(!ev) return;
-        console.log('PADDLE EVENT:', ev.name, ev);   // TEMP DEBUG — remove later
         // handle several possible completion event names across Paddle versions
         if(ev.name==='checkout.completed' || ev.name==='checkout.payment.completed'){
           closePricing();
