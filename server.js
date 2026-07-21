@@ -102,11 +102,17 @@ app.post('/api/download', async (req, res) => {
       return res.status(400).json({ error: "unsupported link — use TikTok, YouTube, or Instagram." });
     }
 
+    // platform-specific yt-dlp flags. YouTube blocks cloud-server IPs with a
+    // bot-check; the android player client sidesteps it. tiktok/ig need nothing.
+    const extra = platform.name === 'youtube'
+      ? ['--extractor-args', 'youtube:player_client=android,web']
+      : [];
+
     // 3) metadata first — proves the video is real & reachable, so we don't
     //    charge a credit for dead / private links
     let meta = {};
     try {
-      const { stdout } = await ytdlp(['-j', '--no-warnings', '--no-playlist', clean]);
+      const { stdout } = await ytdlp(['-j', '--no-warnings', '--no-playlist', ...extra, clean]);
       meta = JSON.parse(stdout.trim().split('\n')[0]);
     } catch {
       return res.status(422).json({ error: "couldn't reach that video — might be private or dead." });
@@ -122,7 +128,7 @@ app.post('/api/download', async (req, res) => {
     const id = randomUUID();
     const outTpl = path.join(WORK, `${id}.%(ext)s`);
     const base = ['--no-warnings', '--no-playlist', '--restrict-filenames',
-                  '--force-overwrites', '--no-part', '-o', outTpl];
+                  '--force-overwrites', '--no-part', ...extra, '-o', outTpl];
     const args = audioOnly
       ? [...base, '-x', '--audio-format', 'mp3', '--audio-quality', '0', clean]
       : [...base, '-S', 'res,fps,vcodec:h264,ext:mp4:m4a', '-f', 'bv*+ba/b', '--merge-output-format', 'mp4', clean];
