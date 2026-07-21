@@ -198,7 +198,10 @@
   .lp-nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
   .lp-nav .brand{display:flex;align-items:center;gap:10px}
   .lp-nav .name{font-family:'Archivo',sans-serif;font-weight:800;font-size:16px;letter-spacing:.02em}
-  .lp-nav-btns{display:flex;gap:10px}
+  .lp-nav-btns{display:flex;gap:10px;align-items:center}
+  .lp-price-link{color:var(--text);text-decoration:none;font-family:'Archivo',sans-serif;font-weight:600;font-size:14px;
+    padding:9px 14px;transition:color .15s}
+  .lp-price-link:hover{color:var(--red-bright)}
   .lp-login{background:none;border:1px solid var(--line);color:var(--text);border-radius:100px;
     padding:9px 18px;font-family:'Archivo',sans-serif;font-weight:600;font-size:14px;cursor:pointer;transition:border-color .15s}
   .lp-login:hover{border-color:var(--red)}
@@ -339,6 +342,7 @@
       <nav class="lp-nav">
         <div class="brand"><span class="ec-logo" role="img" aria-label="Exposure Club"></span><span class="name">Exposure Club</span></div>
         <div class="lp-nav-btns">
+          <a class="lp-price-link" href="/pricing.html">Pricing</a>
           <button class="lp-login" id="lp-login">Log In</button>
           <button class="lp-cta" id="lp-signup-top">Get Started</button>
         </div>
@@ -378,7 +382,7 @@
       </section>
 
       <div class="lp-foot">
-        <div style="margin-bottom:10px"><a href="/terms.html" style="color:var(--muted);text-decoration:none;margin:0 10px">Terms</a><a href="/privacy.html" style="color:var(--muted);text-decoration:none;margin:0 10px">Privacy</a><a href="/refund.html" style="color:var(--muted);text-decoration:none;margin:0 10px">Refunds</a></div>
+        <div style="margin-bottom:10px"><a href="/pricing.html" style="color:var(--muted);text-decoration:none;margin:0 10px">Pricing</a><a href="/terms.html" style="color:var(--muted);text-decoration:none;margin:0 10px">Terms</a><a href="/privacy.html" style="color:var(--muted);text-decoration:none;margin:0 10px">Privacy</a><a href="/refund.html" style="color:var(--muted);text-decoration:none;margin:0 10px">Refunds</a></div>
         &copy; Exposure Club &#183; Marketing Tools
       </div>
     </div>
@@ -923,6 +927,7 @@ renderTools();
   const { data } = await supabase.auth.getSession();
   if(isRecoveryLink){ recovering=true; showAuth(); }
   else if(data.session){ session=data.session; await refreshBalance(); enterHub(); }
+  else if(/[?&]signup=1/.test(window.location.search)){ goAuth('signup'); }
   else showLanding();
   supabase.auth.onAuthStateChange(async (evt,s)=>{
     // password recovery: user clicked the reset link — show the reset screen, don't log in
