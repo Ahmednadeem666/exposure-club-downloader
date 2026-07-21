@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pricing — Exposure Club Marketing Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#0B0708;--card:#140C0E;--card-2:#180F11;--line:rgba(229,57,44,.14);--line-soft:rgba(255,255,255,.06);
+    --text:#F3EEEC;--muted:#8E8280;--red:#E5392C;--red-bright:#FF574C;--r:14px;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Archivo',system-ui,sans-serif;line-height:1.6;padding:0 24px;overflow-x:hidden}
+  .glow{position:absolute;top:-15%;left:50%;transform:translateX(-50%);width:800px;height:500px;
+    background:radial-gradient(circle,rgba(229,57,44,.16),transparent 60%);pointer-events:none;z-index:0}
+  .wrap{position:relative;z-index:1;max-width:1000px;margin:0 auto;padding:0 0 70px}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:22px 0;border-bottom:1px solid var(--line-soft)}
+  .brand{font-family:'Archivo',sans-serif;font-weight:800;font-size:16px}
+  .brand .r{color:var(--red)}
+  .top a{color:var(--muted);text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px}
+  .top a:hover{color:var(--red-bright)}
+  .hero{text-align:center;padding:56px 0 20px}
+  .eyebrow{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--red-bright);border:1px solid var(--line);border-radius:100px;padding:6px 15px;margin-bottom:22px}
+  h1{font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(38px,7vw,68px);text-transform:uppercase;letter-spacing:-.01em;margin-bottom:16px}
+  h1 .r{color:var(--red)}
+  .hero p{color:var(--muted);max-width:520px;margin:0 auto;font-size:16px}
+  .sub-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:48px 0 18px}
+
+  /* subscription hero card */
+  .plan{max-width:440px;margin:0 auto;background:linear-gradient(180deg,var(--card-2),var(--card));border:1.5px solid var(--red);
+    border-radius:18px;padding:34px 30px;text-align:center;position:relative}
+  .plan .tag{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:5px 14px;border-radius:100px}
+  .plan h2{font-family:'Archivo',sans-serif;font-weight:800;font-size:22px;margin-bottom:6px}
+  .plan .price{font-family:'Anton',sans-serif;font-size:56px;line-height:1;margin:14px 0 4px}
+  .plan .price small{font-family:'Archivo',sans-serif;font-size:17px;font-weight:600;color:var(--muted)}
+  .plan .cr{color:var(--red-bright);font-weight:700;font-size:16px;margin-bottom:20px}
+  .plan ul{list-style:none;text-align:left;max-width:260px;margin:0 auto 24px}
+  .plan li{padding:7px 0 7px 26px;position:relative;font-size:14.5px;color:#d8cdcb}
+  .plan li::before{content:"✓";position:absolute;left:0;color:var(--red-bright);font-weight:700}
+  .btn{display:inline-block;width:100%;background:linear-gradient(180deg,var(--red-bright),var(--red));color:#fff;border:none;
+    border-radius:11px;padding:15px 0;font-family:'Archivo',sans-serif;font-weight:800;font-size:16px;cursor:pointer;text-decoration:none;text-align:center;transition:filter .15s}
+  .btn:hover{filter:brightness(1.08)}
+
+  /* packs */
+  .packs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:760px;margin:0 auto}
+  .pack{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:26px 22px;text-align:center;transition:border-color .15s}
+  .pack:hover{border-color:var(--red)}
+  .pack h3{font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;color:var(--muted);margin-bottom:10px}
+  .pack .pprice{font-family:'Anton',sans-serif;font-size:40px;line-height:1;margin-bottom:4px}
+  .pack .pcr{color:var(--red-bright);font-weight:700;font-size:15px;margin-bottom:18px}
+  .pack .pbtn{display:block;background:transparent;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px 0;
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;cursor:pointer;text-decoration:none;transition:border-color .15s,background .15s}
+  .pack .pbtn:hover{border-color:var(--red);background:rgba(229,57,44,.06)}
+  .note{text-align:center;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px;margin-top:34px}
+  .foot{text-align:center;padding:40px 0 0;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px;border-top:1px solid var(--line-soft);margin-top:56px}
+  .foot a{color:var(--muted);text-decoration:none;margin:0 8px}
+  .foot a:hover{color:var(--red-bright)}
+  @media(max-width:680px){.packs{grid-template-columns:1fr;max-width:440px}}
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="wrap">
+    <div class="top">
+      <span class="brand">EC<span class="r">.</span> Marketing Tools</span>
+      <a href="/">&#8592; back to site</a>
+    </div>
+
+    <header class="hero">
+      <span class="eyebrow">Simple Pricing</span>
+      <h1>Pick your <span class="r">plan.</span></h1>
+      <p>Subscribe for the best rate, or grab a one-time credit pack. Credits work across every tool in the suite &#8212; and they stack.</p>
+    </header>
+
+    <div class="sub-label">— Membership —</div>
+    <div class="plan">
+      <div class="tag">Best Value</div>
+      <h2>Monthly Membership</h2>
+      <div class="price">$20<small>/mo</small></div>
+      <div class="cr">500 credits every month</div>
+      <ul>
+        <li>500 credits added monthly</li>
+        <li>Unused credits roll over &amp; stack</li>
+        <li>Access to every tool in the suite</li>
+        <li>Cancel anytime</li>
+      </ul>
+      <a class="btn" href="/?signup=1">Get Started &#8594;</a>
+    </div>
+
+    <div class="sub-label">— One-Time Credit Packs —</div>
+    <div class="packs">
+      <div class="pack">
+        <h3>Small</h3>
+        <div class="pprice">$10</div>
+        <div class="pcr">150 credits</div>
+        <a class="pbtn" href="/?signup=1">Get Started</a>
+      </div>
+      <div class="pack">
+        <h3>Medium</h3>
+        <div class="pprice">$25</div>
+        <div class="pcr">500 credits</div>
+        <a class="pbtn" href="/?signup=1">Get Started</a>
+      </div>
+      <div class="pack">
+        <h3>Large</h3>
+        <div class="pprice">$45</div>
+        <div class="pcr">1,200 credits</div>
+        <a class="pbtn" href="/?signup=1">Get Started</a>
+      </div>
+    </div>
+
+    <p class="note">create a free account to get started &#183; secure checkout by paddle</p>
+
+    <div class="foot">
+      <div style="margin-bottom:8px">
+        <a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a><a href="/refund.html">Refunds</a>
+      </div>
+      &copy; Exposure Club &#183; Marketing Tools
+    </div>
+  </div>
+</body>
+</html>
