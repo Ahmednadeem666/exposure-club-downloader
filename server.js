@@ -41,6 +41,11 @@ const SCRIPT_COST = 4;                   // credits per script (longer output)
 const SCRIPT_MODEL = 'claude-haiku-4-5';
 const MAX_TOPIC_CHARS = 600;
 
+// AI Affiliate Advisor (chatbot Q&A)
+const ADVISOR_COST = 1;                  // credits per question
+const ADVISOR_MODEL = 'claude-sonnet-4-6';  // smarter answers for expert advice
+const MAX_QUESTION_CHARS = 1500;
+
 app.use(cors());
 
 // Paddle webhook MUST read the raw body to verify the signature,
@@ -474,6 +479,85 @@ Respond with ONLY the script, using the labeled beats above (HOOK / BODY / CTA).
     return res.json({ script, creditsLeft });
   } catch (e) {
     console.error('script handler error:', e);
+    return res.status(500).json({ error: 'something went wrong. Try again.' });
+  }
+});
+
+app.post('/api/advisor', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured on the server yet.' });
+    if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'advisor not configured yet.' });
+
+    // 1) must be logged in
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+
+    // 2) validate input
+    const question = (req.body && req.body.question ? String(req.body.question) : '').trim();
+    if (!question) return res.status(400).json({ error: 'ask a question first.' });
+    if (question.length > MAX_QUESTION_CHARS) return res.status(400).json({ error: 'keep the question a bit shorter.' });
+
+    // 3) spend credits up front (atomic)
+    const { data: ok, error: cErr } = await supabase.rpc('spend_credits', { p_user: user.id, p_amount: ADVISOR_COST });
+    if (cErr) return res.status(500).json({ error: 'credit check failed — try again.' });
+    if (!ok) return res.status(402).json({ error: 'out of credits' });
+
+    const refund = async () => { try { await supabase.rpc('add_credits', { p_user: user.id, p_amount: ADVISOR_COST }); } catch (_) {} };
+
+    const system = `You are the Exposure Club AI Affiliate Advisor — a seasoned expert in affiliate and CPA marketing, especially TikTok organic. You know the space deeply: CPA networks, sweepstakes and CPI offers, faceless slideshow content, TikTok organic growth, traffic sources, offer selection, landing pages, compliance, tracking, and scaling. You advise like a sharp, experienced marketer talking to a fellow marketer — direct, practical, specific, no fluff.
+
+Rules:
+- Give actionable, specific advice — real tactics, not generic platitudes. Assume the person knows the basics.
+- Match the casual, no-BS tone of the affiliate space. Be concise but complete.
+- If something is risky, gray-hat, or against a network's/platform's terms, say so honestly rather than pretending — but still be helpful about legitimate approaches.
+- Never help with anything outright illegal (fraud, fake leads, cookie stuffing, incentivized traffic where prohibited, etc.). Redirect to legitimate tactics.
+- If a question is vague, give the best general answer AND note what detail would sharpen it.
+- Format for readability: short paragraphs, and use bullet points when listing tactics or steps.`;
+
+    let r;
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: ADVISOR_MODEL,
+          max_tokens: 1500,
+          system,
+          messages: [{ role: 'user', content: question }],
+        }),
+      });
+    } catch (e) {
+      await refund();
+      return res.status(502).json({ error: 'couldn\u2019t reach the advisor. Try again — your credits were not charged.' });
+    }
+
+    if (!r.ok) {
+      const errText = await r.text().catch(() => '');
+      console.error('Anthropic API error:', errText);
+      await refund();
+      return res.status(502).json({ error: 'the advisor failed. Try again — your credits were not charged.' });
+    }
+
+    const data = await r.json();
+    let answer = (data.content || []).map((i) => (i.type === 'text' ? i.text : '')).join('').trim();
+    if (!answer) {
+      await refund();
+      return res.status(502).json({ error: 'got an empty response. Try again — your credits were not charged.' });
+    }
+
+    let creditsLeft = null;
+    try {
+      const { data: prof } = await supabase.from('profiles').select('credits').eq('id', user.id).single();
+      if (prof) creditsLeft = prof.credits;
+    } catch (_) {}
+
+    return res.json({ answer, creditsLeft });
+  } catch (e) {
+    console.error('advisor handler error:', e);
     return res.status(500).json({ error: 'something went wrong. Try again.' });
   }
 });
