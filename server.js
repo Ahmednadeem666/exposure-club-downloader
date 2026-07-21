@@ -108,14 +108,17 @@ app.post('/api/download', async (req, res) => {
       ? ['--extractor-args', 'youtube:player_client=android,web']
       : [];
 
-    // 3) metadata first — proves the video is real & reachable, so we don't
+   // 3) metadata first — proves the video is real & reachable, so we don't
     //    charge a credit for dead / private links
     let meta = {};
     try {
       const { stdout } = await ytdlp(['-j', '--no-warnings', '--no-playlist', ...extra, clean]);
       meta = JSON.parse(stdout.trim().split('\n')[0]);
-    } catch {
-      return res.status(422).json({ error: "couldn't reach that video — might be private or dead." });
+    } catch (err) {
+      // TEMP DEBUG: surface the real reason so we can see what yt-dlp says
+      const detail = ((err && (err.stderr || err.message)) || '').toString().slice(-300);
+      console.error('YTDLP META FAIL:', detail);
+      return res.status(422).json({ error: "couldn't reach that video — " + (detail || 'unknown') });
     }
 
    // 4) spend this platform's credit cost atomically. false = not enough credits
