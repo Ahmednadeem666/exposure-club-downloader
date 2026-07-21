@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHmac, timingSafeEqual } from 'node:crypto';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
@@ -27,7 +27,83 @@ const supabase = (SUPABASE_URL && SUPABASE_SERVICE_KEY)
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { persistSession: false } })
   : null;
 
+// Paddle — webhook signature secret (from Paddle → Notifications → your destination)
+const PADDLE_WEBHOOK_SECRET = process.env.PADDLE_WEBHOOK_SECRET || '';
+
 app.use(cors());
+
+// Paddle webhook MUST read the raw body to verify the signature,
+// so it's registered with a raw parser BEFORE the global json middleware.
+app.post('/api/paddle-webhook', express.raw({ type: '*/*', limit: '512kb' }), async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).send('accounts not configured');
+    if (!PADDLE_WEBHOOK_SECRET) { console.error('PADDLE_WEBHOOK_SECRET not set'); return res.status(500).send('webhook not configured'); }
+
+    const raw = req.body; // Buffer
+    const sigHeader = req.get('Paddle-Signature') || '';
+
+    // header looks like: "ts=1699999999;h1=abcdef..."
+    const parts = Object.fromEntries(sigHeader.split(';').map(kv => kv.split('=')));
+    const ts = parts.ts, h1 = parts.h1;
+    if (!ts || !h1) return res.status(400).send('bad signature header');
+
+    // signed payload is "ts:rawBody"
+    const signed = `${ts}:${raw.toString('utf8')}`;
+    const expected = createHmac('sha256', PADDLE_WEBHOOK_SECRET).update(signed).digest('hex');
+
+    // constant-time compare
+    const a = Buffer.from(expected, 'hex'), b = Buffer.from(h1, 'hex');
+    if (a.length !== b.length || !timingSafeEqual(a, b)) {
+      console.error('paddle signature mismatch');
+      return res.status(401).send('bad signature');
+    }
+
+    const evt = JSON.parse(raw.toString('utf8'));
+    const type = evt.event_type || '';
+    const eventId = evt.event_id || evt.notification_id || '';
+    const data = evt.data || {};
+
+    // we grant credits when a transaction completes (covers both the first
+    // subscription payment, each monthly renewal, AND one-time pack buys)
+    if (type === 'transaction.completed') {
+      // our Supabase user id was passed through at checkout as custom_data.user_id
+      const userId = (data.custom_data && data.custom_data.user_id) || null;
+
+      // each line item has a price id; grant for every known priced item
+      const items = Array.isArray(data.items) ? data.items : [];
+      const results = [];
+      for (const it of items) {
+        const priceId = (it.price && it.price.id) || it.price_id || null;
+        if (!priceId) continue;
+        // unique per (event, price) so multi-item carts don't collide in the ledger
+        const grantEventId = `${eventId}:${priceId}`;
+        const { data: r, error } = await supabase.rpc('grant_paddle_credits', {
+          p_event_id: grantEventId, p_user: userId, p_price_id: priceId,
+        });
+        if (error) { console.error('grant rpc error', error); }
+        results.push(r);
+      }
+
+      // track subscription id/status on the profile when present
+      if (userId && data.subscription_id) {
+        await supabase.from('profiles')
+          .update({ paddle_subscription_id: data.subscription_id, paddle_status: 'active' })
+          .eq('id', userId);
+      }
+      console.log('paddle transaction.completed granted:', JSON.stringify(results));
+    } else if (type === 'subscription.canceled') {
+      const userId = (data.custom_data && data.custom_data.user_id) || null;
+      if (userId) await supabase.from('profiles').update({ paddle_status: 'canceled' }).eq('id', userId);
+    }
+
+    // always 200 fast so Paddle doesn't retry a handled event
+    return res.status(200).send('ok');
+  } catch (e) {
+    console.error('paddle webhook error', e);
+    return res.status(200).send('ok'); // swallow to avoid retry storms; we log it
+  }
+});
+
 app.use(express.json({ limit: '16kb' }));
 
 // serve the page (from ./public or next to this file)
@@ -110,7 +186,7 @@ app.post('/api/download', async (req, res) => {
       return res.status(422).json({ error: "couldn't reach that video — might be private or dead." });
     }
 
-   // 4) spend this platform's credit cost atomically. false = not enough credits
+    // 4) spend this platform's credit cost atomically. false = not enough credits
     const cost = platform.cost;
     const { data: ok, error: cErr } = await supabase.rpc('spend_credits', { p_user: user.id, p_amount: cost });
     if (cErr) return res.status(500).json({ error: 'credit check failed — try again.' });
@@ -201,6 +277,7 @@ app.post('/api/redeem', async (req, res) => {
     });
     if (error) return res.status(500).json({ error: 'redeem failed — try again.' });
 
+    // the function returns { ok, error?, credits_added?, balance? }
     if (!data || !data.ok) {
       return res.status(400).json({ error: (data && data.error) || 'invalid code' });
     }
