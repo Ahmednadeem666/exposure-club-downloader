@@ -216,6 +216,28 @@
     font-family:'Archivo',sans-serif;font-size:14.5px;line-height:1.7;color:var(--text);
     opacity:0;animation:hookIn .35s ease forwards;white-space:pre-wrap}
   .ad-answer strong{color:var(--red-bright);font-weight:700}
+  /* AI Agent chat */
+  .ag-bar{display:flex;gap:8px;margin-bottom:14px}
+  .ag-new,.ag-history-btn{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:100px;
+    padding:9px 16px;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s}
+  .ag-new:hover,.ag-history-btn:hover{border-color:var(--red);background:rgba(229,57,44,.06)}
+  .ag-history{display:none;flex-direction:column;gap:6px;margin-bottom:16px;padding:10px;background:var(--card);
+    border:1px solid var(--line);border-radius:var(--r)}
+  .ag-history.show{display:flex}
+  .ag-hist-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;transition:background .15s}
+  .ag-hist-item:hover{background:rgba(229,57,44,.06)}
+  .ag-hist-item.active{background:rgba(229,57,44,.10)}
+  .ag-hist-title{flex:1;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ag-hist-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 4px;flex:none}
+  .ag-hist-del:hover{color:var(--red-bright)}
+  .ag-hist-empty{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px;text-align:center;padding:8px}
+  .ag-thread{display:flex;flex-direction:column;gap:14px;margin-bottom:18px}
+  .ag-msg{max-width:88%;padding:13px 16px;border-radius:14px;font-size:14.5px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word}
+  .ag-msg.user{align-self:flex-end;background:linear-gradient(180deg,var(--red-bright),var(--red));color:#fff;border-bottom-right-radius:4px}
+  .ag-msg.bot{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px}
+  .ag-msg.bot strong{color:var(--red-bright);font-weight:700}
+  .ag-typing{align-self:flex-start;display:flex;align-items:center;gap:8px;color:var(--muted);
+    font-family:'JetBrains Mono',monospace;font-size:13px;padding:4px 2px}
   /* Content Planner */
   .pl-days{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
   .pl-day{background:var(--bg-soft);border:1px solid var(--line);color:var(--muted);border-radius:100px;
@@ -249,6 +271,16 @@
   .pl-fmt{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red-bright);
     background:rgba(229,57,44,.08);border-radius:5px;padding:2px 7px;margin-top:5px}
   .pl-empty{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:13px;text-align:center;padding:20px}
+  .pl-mine{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.04em;color:var(--red-bright);
+    border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-left:7px;vertical-align:middle}
+  .pl-add{display:flex;gap:8px;margin-top:10px;padding-left:31px}
+  .pl-add-in{flex:1;background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;color:var(--text);
+    font-family:'JetBrains Mono',monospace;font-size:13px;padding:9px 12px;outline:none;transition:border-color .15s}
+  .pl-add-in:focus{border-color:var(--red)}
+  .pl-add-in::placeholder{color:var(--muted);opacity:.6}
+  .pl-add-btn{flex:none;background:transparent;border:1px solid var(--line);color:var(--text);border-radius:8px;
+    padding:9px 16px;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s}
+  .pl-add-btn:hover{border-color:var(--red);background:rgba(229,57,44,.06)}
   #ad-question{width:100%;background:transparent;border:none;outline:none;resize:vertical;color:var(--text);
     font-family:'Archivo',sans-serif;font-size:15px;line-height:1.65;min-height:96px}
   #ad-question::placeholder{color:var(--muted);opacity:.5;font-family:'JetBrains Mono',monospace;font-size:13.5px}
@@ -689,21 +721,31 @@
     <section class="view" id="view-advisor">
       <button class="back" data-back>&#8592; back to tools</button>
       <h1 class="glitch" id="ad-mark"><span class="mark-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6.5A8 8 0 1 1 21 12z"/><path d="M12 7v.01M12 10v4"/></svg></span>AI AGENT<span class="dot-red">.</span></h1>
-      <p class="sub">ask anything about <b>CPA &amp; TikTok organic</b> &#8212; offers, angles, scaling, traffic.</p>
-      <div class="cost-badge">&#9889; 1 credit per question</div>
+      <p class="sub">chat with your <b>CPA &amp; TikTok organic</b> expert &#8212; it remembers the conversation.</p>
+      <div class="cost-badge">&#9889; 1 credit per message</div>
+
+      <div class="ag-bar">
+        <button type="button" class="ag-new" id="ag-new">+ new chat</button>
+        <button type="button" class="ag-history-btn" id="ag-history-btn">history</button>
+      </div>
+      <div class="ag-history" id="ag-history"></div>
+
+      <div class="ag-thread" id="ag-thread"></div>
+
       <div class="starter-chips" id="ad-chips">
         <button type="button" class="starter-chip">best sweepstakes angle for faceless tiktok</button>
         <button type="button" class="starter-chip">how do i scale a CPI offer</button>
         <button type="button" class="starter-chip">why is my CTR low</button>
         <button type="button" class="starter-chip">how to pick a good CPA offer</button>
       </div>
+
       <form id="ad-form" autocomplete="off">
         <div class="hg-field">
-          <textarea id="ad-question" rows="4" placeholder="ask the expert&#8230;&#10;&#10;e.g. what's the best angle for a sweepstakes CPI offer on faceless tiktok?" aria-label="Your question"></textarea>
+          <textarea id="ad-question" rows="3" placeholder="message the agent&#8230;" aria-label="Your message"></textarea>
           <div class="hg-row">
             <span class="hg-hint" id="ad-count">0 / 1500</span>
             <button class="grab" id="ad-go" type="submit">
-              <span>ask</span>
+              <span>send</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </button>
           </div>
@@ -711,10 +753,9 @@
         <div class="err" id="ad-err" role="alert"></div>
       </form>
       <div class="oos" id="ad-oos">
-        <p><b>out of credits.</b> grab more to keep asking.</p>
+        <p><b>out of credits.</b> grab more to keep chatting.</p>
         <button class="sub-btn" id="ad-sub-btn">get more &#8594;</button>
       </div>
-      <div class="sg-result" id="ad-result"></div>
     </section>
 
     <section class="view" id="view-planner">
@@ -1140,10 +1181,16 @@ function renderScript(script){
   });
 }
 
-// ---- AI Agent ----
-const AD_COST = (TOOLS.find(t=>t.id==='advisor')||{cost:1}).cost;
+// ---- AI Agent (conversational, saved history) ----
 const adForm=$('ad-form'), adQuestion=$('ad-question'), adGo=$('ad-go'),
-      adErr=$('ad-err'), adResult=$('ad-result'), adOos=$('ad-oos'), adCount=$('ad-count');
+      adErr=$('ad-err'), adOos=$('ad-oos'), adCount=$('ad-count');
+const agThread=$('ag-thread'), agHistory=$('ag-history'), agChips=$('ad-chips');
+let agChatId=null;       // current conversation id (null = new, unsaved)
+let agBusy=false;
+
+function agEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function agFmt(s){ return agEsc(s).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>'); }
+function agToken(){ return session&&session.access_token; }
 
 adQuestion&&adQuestion.addEventListener('input',()=>{
   const n=adQuestion.value.length;
@@ -1153,7 +1200,7 @@ adQuestion&&adQuestion.addEventListener('input',()=>{
 
 $('ad-sub-btn')&&$('ad-sub-btn').addEventListener('click',()=>openPricing&&openPricing());
 
-document.querySelectorAll('.starter-chip').forEach(chip=>{
+document.querySelectorAll('#ad-chips .starter-chip').forEach(chip=>{
   chip.addEventListener('click',()=>{
     adQuestion.value=chip.textContent;
     adQuestion.dispatchEvent(new Event('input'));
@@ -1161,48 +1208,124 @@ document.querySelectorAll('.starter-chip').forEach(chip=>{
   });
 });
 
-adForm&&adForm.addEventListener('submit', async (e)=>{
-  e.preventDefault();
+// start a fresh conversation
+function agNewChat(){
+  agChatId=null;
+  agThread.innerHTML='';
+  agHistory.classList.remove('show');
+  if(agChips) agChips.style.display='flex';
   clearErr(adErr); adOos.classList.remove('show');
-  const question=adQuestion.value.trim();
-  if(!question){ showErr(adErr,'ask a question first.'); return; }
-  if(question.length>1500){ showErr(adErr,'keep the question a bit shorter.'); return; }
+  adQuestion.focus();
+}
+$('ag-new')&&$('ag-new').addEventListener('click',agNewChat);
 
-  adGo.disabled=true; adResult.innerHTML='<div class="hg-loading"><span class="hg-spin"></span>thinking it through&#8230;</div>';
-  try{
-    let data;
-    if(DEMO){
-      if(demoCredits<AD_COST){ const er=new Error('out of credits'); er.code=402; throw er; }
-      await new Promise(r=>setTimeout(r,1400));
-      demoCredits-=AD_COST; setCredits(demoCredits);
-      data={ answer:'For a sweepstakes CPI offer on faceless TikTok, your best angle is **curiosity + relatability**:\n\n- Lead with a "found money" hook — something like "nobody\u2019s talking about this but..."\n- Keep the slideshow fast: 3-5 images max, big text overlays\n- Put the offer as the payoff, not the pitch\n\nWant me to sharpen this? Tell me the exact offer vertical and payout.', creditsLeft:demoCredits };
-    } else {
-      const token=session&&session.access_token;
-      const r=await fetch('/api/advisor',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({question})});
-      if(!r.ok){ let m='couldn\u2019t get an answer. try again.'; let code=r.status; try{ m=(await r.json()).error||m; }catch(_){} const er=new Error(m); er.code=code; throw er; }
-      data=await r.json();
-    }
-    if(data.creditsLeft!=null) setCredits(data.creditsLeft); else await refreshBalance();
-    renderAnswer(data.answer||'');
-  }catch(ex){
-    adResult.innerHTML='';
-    if(ex.code===402){ adOos.classList.add('show'); setCredits(0); }
-    else showErr(adErr, ex.message||'something went wrong. try again.');
-  }finally{ adGo.disabled=false; }
+// toggle history panel
+$('ag-history-btn')&&$('ag-history-btn').addEventListener('click',async ()=>{
+  if(agHistory.classList.contains('show')){ agHistory.classList.remove('show'); return; }
+  await agLoadHistory();
+  agHistory.classList.add('show');
 });
 
-function renderAnswer(answer){
-  if(!answer){ adResult.innerHTML=''; showErr(adErr,'got an empty response. try again.'); return; }
-  // light markdown: escape, then bold **x** and bullet lines
-  let safe=String(answer).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  safe=safe.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
-  adResult.innerHTML='<button class="sg-copy" id="ad-copy">copy</button><div class="ad-answer">'+safe+'</div>';
-  $('ad-copy').addEventListener('click',()=>{
-    navigator.clipboard&&navigator.clipboard.writeText(answer);
-    const b=$('ad-copy'); b.classList.add('copied'); b.textContent='copied';
-    setTimeout(()=>{ b.classList.remove('copied'); b.textContent='copy'; },1500);
-  });
+function agAddMsg(role, text){
+  const div=document.createElement('div');
+  div.className='ag-msg '+(role==='user'?'user':'bot');
+  div.innerHTML = role==='user' ? agEsc(text) : agFmt(text);
+  agThread.appendChild(div);
+  div.scrollIntoView({behavior:'smooth', block:'end'});
+  return div;
 }
+
+adForm&&adForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(agBusy) return;
+  clearErr(adErr); adOos.classList.remove('show');
+  const message=adQuestion.value.trim();
+  if(!message){ showErr(adErr,'type a message first.'); return; }
+  if(message.length>1500){ showErr(adErr,'keep the message a bit shorter.'); return; }
+
+  if(agChips) agChips.style.display='none';   // hide starters once chatting
+  agAddMsg('user', message);
+  adQuestion.value=''; adQuestion.dispatchEvent(new Event('input'));
+  agBusy=true; adGo.disabled=true;
+  const typing=document.createElement('div');
+  typing.className='ag-typing'; typing.innerHTML='<span class="hg-spin"></span>thinking&#8230;';
+  agThread.appendChild(typing); typing.scrollIntoView({behavior:'smooth',block:'end'});
+
+  try{
+    if(DEMO){
+      await new Promise(r=>setTimeout(r,1200));
+      typing.remove();
+      agAddMsg('bot','This is a demo reply — the agent works on the live site.');
+    } else {
+      const r=await fetch('/api/agent/send',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(agToken()||'')},body:JSON.stringify({message, chatId:agChatId})});
+      if(!r.ok){ let m='couldn\u2019t send. try again.'; let code=r.status; try{ m=(await r.json()).error||m; }catch(_){} const er=new Error(m); er.code=code; throw er; }
+      const data=await r.json();
+      typing.remove();
+      agChatId=data.chatId||agChatId;
+      if(data.creditsLeft!=null) setCredits(data.creditsLeft); else await refreshBalance();
+      agAddMsg('bot', data.answer||'');
+    }
+  }catch(ex){
+    typing.remove();
+    if(ex.code===402){ adOos.classList.add('show'); setCredits(0); }
+    else showErr(adErr, ex.message||'something went wrong. try again.');
+  }finally{ agBusy=false; adGo.disabled=false; adQuestion.focus(); }
+});
+
+// Enter to send (Shift+Enter = newline)
+adQuestion&&adQuestion.addEventListener('keydown',(e)=>{
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); adForm.dispatchEvent(new Event('submit',{cancelable:true})); }
+});
+
+async function agLoadHistory(){
+  if(DEMO){ agHistory.innerHTML='<div class="ag-hist-empty">history shows on the live site.</div>'; return; }
+  try{
+    const r=await fetch('/api/agent/list',{headers:{'Authorization':'Bearer '+(agToken()||'')}});
+    if(!r.ok) throw new Error('load failed');
+    const data=await r.json();
+    const chats=data.chats||[];
+    if(!chats.length){ agHistory.innerHTML='<div class="ag-hist-empty">no past chats yet.</div>'; return; }
+    agHistory.innerHTML=chats.map(c=>{
+      const active = c.id===agChatId ? ' active' : '';
+      return '<div class="ag-hist-item'+active+'" data-chat="'+c.id+'"><span class="ag-hist-title">'+agEsc(c.title||'chat')+'</span>'
+        +'<button class="ag-hist-del" data-del="'+c.id+'" title="delete">&#10005;</button></div>';
+    }).join('');
+    agHistory.querySelectorAll('.ag-hist-item').forEach(it=>{
+      it.addEventListener('click',(e)=>{
+        if(e.target.closest('.ag-hist-del')) return;
+        agOpenChat(it.dataset.chat);
+      });
+    });
+    agHistory.querySelectorAll('.ag-hist-del').forEach(b=>{
+      b.addEventListener('click', async (e)=>{
+        e.stopPropagation();
+        if(!confirm('Delete this chat?')) return;
+        try{
+          await fetch('/api/agent/delete',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(agToken()||'')},body:JSON.stringify({chatId:b.dataset.del})});
+          if(b.dataset.del===agChatId) agNewChat();
+          await agLoadHistory();
+        }catch(_){}
+      });
+    });
+  }catch(ex){ agHistory.innerHTML='<div class="ag-hist-empty">couldn\u2019t load history.</div>'; }
+}
+
+async function agOpenChat(id){
+  try{
+    const r=await fetch('/api/agent/get?id='+encodeURIComponent(id),{headers:{'Authorization':'Bearer '+(agToken()||'')}});
+    if(!r.ok) throw new Error('open failed');
+    const data=await r.json();
+    const chat=data.chat; if(!chat) return;
+    agChatId=chat.id;
+    agThread.innerHTML='';
+    if(agChips) agChips.style.display='none';
+    (chat.messages||[]).forEach(m=>agAddMsg(m.role==='assistant'?'bot':'user', m.text||''));
+    agHistory.classList.remove('show');
+    clearErr(adErr); adOos.classList.remove('show');
+    adQuestion.focus();
+  }catch(ex){ showErr(adErr,'couldn\u2019t open that chat.'); }
+}
+
 
 // ---- Content Planner ----
 const PL_COST = (TOOLS.find(t=>t.id==='planner')||{cost:4}).cost;
@@ -1275,10 +1398,12 @@ function renderPlans(plans){
     const body = days.map((d,di)=>{
       const slots=(d.slots||[]).map((s,si)=>{
         const on=s.posted?' on':'', done=s.posted?' done':'';
+        const mine=s.custom?'<span class="pl-mine">yours</span>':'';
         return '<div class="pl-slot'+done+'"><div class="pl-check'+on+'" data-plan="'+p.id+'" data-day="'+di+'" data-slot="'+si+'"></div>'
-          +'<div class="pl-slot-txt">'+esc(s.text)+(s.format?'<br><span class="pl-fmt">'+esc(s.format)+'</span>':'')+'</div></div>';
+          +'<div class="pl-slot-txt">'+esc(s.text)+mine+(s.format?'<br><span class="pl-fmt">'+esc(s.format)+'</span>':'')+'</div></div>';
       }).join('');
-      return '<div class="pl-day-row"><div class="pl-day-label">'+esc(d.date||('day '+(di+1)))+'</div>'+slots+'</div>';
+      const addRow='<div class="pl-add"><input class="pl-add-in" data-plan="'+p.id+'" data-day="'+di+'" type="text" placeholder="+ add your own hook for this day…" aria-label="Add your own hook" /><button class="pl-add-btn" data-plan="'+p.id+'" data-day="'+di+'">add</button></div>';
+      return '<div class="pl-day-row"><div class="pl-day-label">'+esc(d.date||('day '+(di+1)))+'</div>'+slots+addRow+'</div>';
     }).join('');
     return '<div class="pl-card'+openCls+'" data-card="'+p.id+'">'
       +'<div class="pl-head"><div><h3>'+esc(p.title)+'</h3><div class="pl-meta">'+p.days+' days · created '+String(p.created_at||'').slice(0,10)+'</div></div>'
@@ -1315,6 +1440,28 @@ function renderPlans(plans){
         await fetch('/api/plan/delete',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(plToken()||'')},body:JSON.stringify({planId})});
         await loadPlans();
       }catch(_){}
+    });
+  });
+  // add your own hook to a day
+  const doAdd = async (planId, dayIdx, input)=>{
+    const text=input.value.trim();
+    if(!text) return;
+    input.disabled=true;
+    try{
+      const r=await fetch('/api/plan/add-slot',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(plToken()||'')},body:JSON.stringify({planId,dayIdx,text,format:'yours'})});
+      if(r.ok){ await loadPlans(); }
+      else { input.disabled=false; }
+    }catch(_){ input.disabled=false; }
+  };
+  plSaved.querySelectorAll('.pl-add-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const input=b.parentElement.querySelector('.pl-add-in');
+      doAdd(b.dataset.plan, +b.dataset.day, input);
+    });
+  });
+  plSaved.querySelectorAll('.pl-add-in').forEach(inp=>{
+    inp.addEventListener('keydown',(e)=>{
+      if(e.key==='Enter'){ e.preventDefault(); doAdd(inp.dataset.plan, +inp.dataset.day, inp); }
     });
   });
 }
