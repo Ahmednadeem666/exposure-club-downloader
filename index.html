@@ -213,6 +213,23 @@
     font-family:'Archivo',sans-serif;font-size:14.5px;line-height:1.7;color:var(--text);
     opacity:0;animation:hookIn .35s ease forwards;white-space:pre-wrap}
   .ad-answer strong{color:var(--red-bright);font-weight:700}
+  #ad-question{width:100%;background:transparent;border:none;outline:none;resize:vertical;color:var(--text);
+    font-family:'Archivo',sans-serif;font-size:15px;line-height:1.65;min-height:96px}
+  #ad-question::placeholder{color:var(--muted);opacity:.5;font-family:'JetBrains Mono',monospace;font-size:13.5px}
+  #view-advisor .hg-field{transition:border-color .18s, box-shadow .18s}
+  #view-advisor .hg-field:focus-within{border-color:var(--red);box-shadow:0 0 0 3px rgba(229,57,44,.10)}
+  /* credit badge */
+  .cost-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(229,57,44,.10);border:1px solid var(--line);
+    color:var(--red-bright);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;letter-spacing:.02em;
+    padding:7px 13px;border-radius:100px;margin-bottom:18px}
+  /* starter question chips */
+  .starter-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+  .starter-chip{background:var(--card);border:1px solid var(--line);color:var(--muted);border-radius:100px;
+    padding:9px 15px;font-family:'Archivo',sans-serif;font-size:13px;cursor:pointer;transition:all .15s}
+  .starter-chip:hover{border-color:var(--red);color:var(--text);background:rgba(229,57,44,.06)}
+  /* unified focus glow across all AI tool fields */
+  .hg-field{transition:border-color .18s, box-shadow .18s}
+  .hg-field:focus-within{border-color:var(--red);box-shadow:0 0 0 3px rgba(229,57,44,.10)}
 
   .stage{margin-top:26px}
   .card{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
@@ -632,7 +649,14 @@
     <section class="view" id="view-advisor">
       <button class="back" data-back>&#8592; back to tools</button>
       <h1 class="glitch" id="ad-mark">ADVISOR<span class="dot-red">.</span></h1>
-      <p class="sub">ask anything about <b>CPA &amp; TikTok organic</b> &#8212; offers, angles, scaling, traffic. <b>1 credit</b> a question.</p>
+      <p class="sub">ask anything about <b>CPA &amp; TikTok organic</b> &#8212; offers, angles, scaling, traffic.</p>
+      <div class="cost-badge">&#9889; 1 credit per question</div>
+      <div class="starter-chips" id="ad-chips">
+        <button type="button" class="starter-chip">best sweepstakes angle for faceless tiktok</button>
+        <button type="button" class="starter-chip">how do i scale a CPI offer</button>
+        <button type="button" class="starter-chip">why is my CTR low</button>
+        <button type="button" class="starter-chip">how to pick a good CPA offer</button>
+      </div>
       <form id="ad-form" autocomplete="off">
         <div class="hg-field">
           <textarea id="ad-question" rows="4" placeholder="ask the expert&#8230;&#10;&#10;e.g. what's the best angle for a sweepstakes CPI offer on faceless tiktok?" aria-label="Your question"></textarea>
@@ -655,7 +679,7 @@
 
     <footer>
       <span>exposure club toolkit</span>
-      <span>powered by yt-dlp</span>
+      <span>powered by Exposure Club</span>
     </footer>
   </div>
 
@@ -1046,6 +1070,14 @@ adQuestion&&adQuestion.addEventListener('input',()=>{
 });
 
 $('ad-sub-btn')&&$('ad-sub-btn').addEventListener('click',()=>openPricing&&openPricing());
+
+document.querySelectorAll('.starter-chip').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    adQuestion.value=chip.textContent;
+    adQuestion.dispatchEvent(new Event('input'));
+    adQuestion.focus();
+  });
+});
 
 adForm&&adForm.addEventListener('submit', async (e)=>{
   e.preventDefault();
