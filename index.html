@@ -208,6 +208,11 @@
     border-radius:8px;padding:7px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;cursor:pointer;transition:all .15s;z-index:2}
   .sg-copy:hover{border-color:var(--red);color:var(--red-bright)}
   .sg-copy.copied{border-color:var(--red-bright);color:var(--red-bright)}
+  /* advisor answer — formatted expert response */
+  .ad-answer{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px 20px;
+    font-family:'Archivo',sans-serif;font-size:14.5px;line-height:1.7;color:var(--text);
+    opacity:0;animation:hookIn .35s ease forwards;white-space:pre-wrap}
+  .ad-answer strong{color:var(--red-bright);font-weight:700}
 
   .stage{margin-top:26px}
   .card{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
@@ -624,6 +629,30 @@
       <div class="sg-result" id="sg-result"></div>
     </section>
 
+    <section class="view" id="view-advisor">
+      <button class="back" data-back>&#8592; back to tools</button>
+      <h1 class="glitch" id="ad-mark">ADVISOR<span class="dot-red">.</span></h1>
+      <p class="sub">ask anything about <b>CPA &amp; TikTok organic</b> &#8212; offers, angles, scaling, traffic. <b>1 credit</b> a question.</p>
+      <form id="ad-form" autocomplete="off">
+        <div class="hg-field">
+          <textarea id="ad-question" rows="4" placeholder="ask the expert&#8230;&#10;&#10;e.g. what's the best angle for a sweepstakes CPI offer on faceless tiktok?" aria-label="Your question"></textarea>
+          <div class="hg-row">
+            <span class="hg-hint" id="ad-count">0 / 1500</span>
+            <button class="grab" id="ad-go" type="submit">
+              <span>ask</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="err" id="ad-err" role="alert"></div>
+      </form>
+      <div class="oos" id="ad-oos">
+        <p><b>out of credits.</b> grab more to keep asking.</p>
+        <button class="sub-btn" id="ad-sub-btn">get more &#8594;</button>
+      </div>
+      <div class="sg-result" id="ad-result"></div>
+    </section>
+
     <footer>
       <span>exposure club toolkit</span>
       <span>powered by yt-dlp</span>
@@ -660,6 +689,9 @@ const TOOLS = [
   { id:'ugc', mono:'SG', name:'UGC Script Generator', status:'live', cost:4,
     blurb:'Scripts that convert, ready to shoot.',
     bullets:['Faceless or talking-head','Hook to CTA','Copy-ready'] },
+  { id:'advisor', mono:'AI', name:'AI Affiliate Advisor', status:'live', cost:1,
+    blurb:'Ask anything about CPA & TikTok organic — expert answers, instantly.',
+    bullets:['Trained on the affiliate space','Offers, angles, scaling','1 credit a question'] },
   { id:'cliptoolkit', mono:'CT', name:'Clip Toolkit', status:'soon', cost:2,
     blurb:'Trim, reframe to vertical, burn captions, export clean.',
     bullets:['1080p MP4','TikTok captions','Emoji picker'] },
@@ -698,6 +730,7 @@ function showView(name){
   if(name==='downloader' && link) setTimeout(()=>link.focus(),120);
   if(name==='hookgen' && hgExamples) setTimeout(()=>hgExamples.focus(),120);
   if(name==='ugc' && sgTopic) setTimeout(()=>sgTopic.focus(),120);
+  if(name==='advisor' && adQuestion) setTimeout(()=>adQuestion.focus(),120);
 }
 function enterHub(){ hideLanding(); gate.classList.add('hide'); topbar.hidden=false; showView('dashboard'); }
 function showAuth(){ hideLanding(); gate.classList.remove('hide'); topbar.hidden=true; setTimeout(()=>emailIn.focus(),100); }
@@ -737,7 +770,7 @@ function renderTools(){
       +'<div class="cost">'+t.cost+' credit'+(t.cost>1?'s':'')+' / use</div>'+btn+'</article>';
   }).join('');
   toolsGrid.querySelectorAll('.launch[data-tool]').forEach(b=>{
-    b.addEventListener('click',()=>{ const t=b.dataset.tool; if(t==='downloader') showView('downloader'); else if(t==='hookgen') showView('hookgen'); else if(t==='ugc') showView('ugc'); });
+    b.addEventListener('click',()=>{ const t=b.dataset.tool; if(t==='downloader') showView('downloader'); else if(t==='hookgen') showView('hookgen'); else if(t==='ugc') showView('ugc'); else if(t==='advisor') showView('advisor'); });
   });
 }
 
@@ -997,6 +1030,62 @@ function renderScript(script){
   $('sg-copy').addEventListener('click',()=>{
     navigator.clipboard&&navigator.clipboard.writeText(script);
     const b=$('sg-copy'); b.classList.add('copied'); b.textContent='copied';
+    setTimeout(()=>{ b.classList.remove('copied'); b.textContent='copy'; },1500);
+  });
+}
+
+// ---- AI Affiliate Advisor ----
+const AD_COST = (TOOLS.find(t=>t.id==='advisor')||{cost:1}).cost;
+const adForm=$('ad-form'), adQuestion=$('ad-question'), adGo=$('ad-go'),
+      adErr=$('ad-err'), adResult=$('ad-result'), adOos=$('ad-oos'), adCount=$('ad-count');
+
+adQuestion&&adQuestion.addEventListener('input',()=>{
+  const n=adQuestion.value.length;
+  adCount.textContent=n+' / 1500';
+  adCount.classList.toggle('over', n>1500);
+});
+
+$('ad-sub-btn')&&$('ad-sub-btn').addEventListener('click',()=>openPricing&&openPricing());
+
+adForm&&adForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  clearErr(adErr); adOos.classList.remove('show');
+  const question=adQuestion.value.trim();
+  if(!question){ showErr(adErr,'ask a question first.'); return; }
+  if(question.length>1500){ showErr(adErr,'keep the question a bit shorter.'); return; }
+
+  adGo.disabled=true; adResult.innerHTML='<div class="hg-loading"><span class="hg-spin"></span>thinking it through&#8230;</div>';
+  try{
+    let data;
+    if(DEMO){
+      if(demoCredits<AD_COST){ const er=new Error('out of credits'); er.code=402; throw er; }
+      await new Promise(r=>setTimeout(r,1400));
+      demoCredits-=AD_COST; setCredits(demoCredits);
+      data={ answer:'For a sweepstakes CPI offer on faceless TikTok, your best angle is **curiosity + relatability**:\n\n- Lead with a "found money" hook — something like "nobody\u2019s talking about this but..."\n- Keep the slideshow fast: 3-5 images max, big text overlays\n- Put the offer as the payoff, not the pitch\n\nWant me to sharpen this? Tell me the exact offer vertical and payout.', creditsLeft:demoCredits };
+    } else {
+      const token=session&&session.access_token;
+      const r=await fetch('/api/advisor',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({question})});
+      if(!r.ok){ let m='couldn\u2019t get an answer. try again.'; let code=r.status; try{ m=(await r.json()).error||m; }catch(_){} const er=new Error(m); er.code=code; throw er; }
+      data=await r.json();
+    }
+    if(data.creditsLeft!=null) setCredits(data.creditsLeft); else await refreshBalance();
+    renderAnswer(data.answer||'');
+  }catch(ex){
+    adResult.innerHTML='';
+    if(ex.code===402){ adOos.classList.add('show'); setCredits(0); }
+    else showErr(adErr, ex.message||'something went wrong. try again.');
+  }finally{ adGo.disabled=false; }
+});
+
+function renderAnswer(answer){
+  if(!answer){ adResult.innerHTML=''; showErr(adErr,'got an empty response. try again.'); return; }
+  // light markdown: escape, then bold **x** and bullet lines
+  let safe=String(answer).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  safe=safe.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  adResult.innerHTML='<button class="sg-copy" id="ad-copy">copy</button><div class="ad-answer">'+safe+'</div>';
+  $('ad-copy').addEventListener('click',()=>{
+    navigator.clipboard&&navigator.clipboard.writeText(answer);
+    const b=$('ad-copy'); b.classList.add('copied'); b.textContent='copied';
     setTimeout(()=>{ b.classList.remove('copied'); b.textContent='copy'; },1500);
   });
 }
