@@ -760,5 +760,40 @@ app.post('/api/plan/delete', async (req, res) => {
   }
 });
 
+// Add the user's own custom hook/post slot to a day (free — no credits).
+app.post('/api/plan/add-slot', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured.' });
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+
+    const planId = req.body && req.body.planId ? String(req.body.planId) : '';
+    const dayIdx = parseInt(req.body && req.body.dayIdx, 10);
+    const text = (req.body && req.body.text ? String(req.body.text) : '').trim();
+    const format = (req.body && req.body.format ? String(req.body.format) : '').trim();
+    if (!planId || isNaN(dayIdx)) return res.status(400).json({ error: 'bad request.' });
+    if (!text) return res.status(400).json({ error: 'type your hook first.' });
+    if (text.length > 500) return res.status(400).json({ error: 'keep it shorter.' });
+
+    const { data: row, error: getErr } = await supabase
+      .from('content_plans').select('*').eq('id', planId).eq('user_id', user.id).single();
+    if (getErr || !row) return res.status(404).json({ error: 'plan not found.' });
+
+    const plan = Array.isArray(row.plan) ? row.plan : [];
+    if (!plan[dayIdx]) return res.status(400).json({ error: 'day not found.' });
+    if (!Array.isArray(plan[dayIdx].slots)) plan[dayIdx].slots = [];
+    plan[dayIdx].slots.push({ text, format: format.slice(0, 60), posted: false, custom: true });
+
+    const { error: updErr } = await supabase
+      .from('content_plans').update({ plan }).eq('id', planId).eq('user_id', user.id);
+    if (updErr) return res.status(500).json({ error: 'couldn\u2019t save.' });
+
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('plan add-slot error:', e);
+    return res.status(500).json({ error: 'something went wrong.' });
+  }
+});
+
 app.get('/health', (_req, res) => res.json({ ok: true, accounts: !!supabase }));
 app.listen(PORT, () => console.log(`exposure club downloader running on :${PORT}`));
