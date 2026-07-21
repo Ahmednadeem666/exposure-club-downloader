@@ -187,6 +187,70 @@
     padding:24px;transition:opacity .4s ease,visibility .4s ease}
   .gate::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(90% 50% at 50% -5%,rgba(229,57,44,.20),transparent 62%)}
   .gate.hide{opacity:0;visibility:hidden;pointer-events:none}
+
+  /* ===== LANDING PAGE ===== */
+  .landing{position:fixed;inset:0;z-index:80;overflow-y:auto;background:var(--bg);
+    opacity:1;visibility:visible;transition:opacity .4s,visibility .4s}
+  .landing.hide{opacity:0;visibility:hidden;pointer-events:none}
+  .lp-glow{position:absolute;top:-20%;left:50%;transform:translateX(-50%);width:900px;height:600px;
+    background:radial-gradient(circle,rgba(229,57,44,.18),transparent 60%);pointer-events:none;z-index:0}
+  .lp-inner{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:0 24px}
+  .lp-nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  .lp-nav .brand{display:flex;align-items:center;gap:10px}
+  .lp-nav .name{font-family:'Archivo',sans-serif;font-weight:800;font-size:16px;letter-spacing:.02em}
+  .lp-nav-btns{display:flex;gap:10px}
+  .lp-login{background:none;border:1px solid var(--line);color:var(--text);border-radius:100px;
+    padding:9px 18px;font-family:'Archivo',sans-serif;font-weight:600;font-size:14px;cursor:pointer;transition:border-color .15s}
+  .lp-login:hover{border-color:var(--red)}
+  .lp-cta{background:linear-gradient(180deg,var(--red-bright),var(--red));color:#fff;border:none;border-radius:100px;
+    padding:10px 20px;font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:filter .15s}
+  .lp-cta:hover{filter:brightness(1.08)}
+
+  .lp-hero{text-align:center;padding:64px 0 48px}
+  .lp-eyebrow{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--red-bright);border:1px solid var(--line);border-radius:100px;padding:7px 16px;margin-bottom:28px}
+  .lp-hero h1{font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(44px,8vw,88px);line-height:.98;
+    text-transform:uppercase;letter-spacing:-.01em;margin-bottom:22px}
+  .lp-hero h1 .r{color:var(--red)}
+  .lp-hero p{max-width:560px;margin:0 auto 34px;font-size:clamp(16px,2.4vw,19px);line-height:1.6;color:var(--muted)}
+  .lp-hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .lp-big{background:linear-gradient(180deg,var(--red-bright),var(--red));color:#fff;border:none;border-radius:12px;
+    padding:16px 40px;font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;cursor:pointer;transition:filter .15s}
+  .lp-big:hover{filter:brightness(1.08)}
+  .lp-ghost{background:none;border:1px solid var(--line-soft);color:var(--text);border-radius:12px;
+    padding:16px 30px;font-family:'Archivo',sans-serif;font-weight:600;font-size:16px;cursor:pointer;transition:border-color .15s}
+  .lp-ghost:hover{border-color:var(--red)}
+  .lp-teaser{margin-top:20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted)}
+  .lp-teaser b{color:var(--red-bright)}
+
+  .lp-section{padding:56px 0;border-top:1px solid var(--line-soft)}
+  .lp-section h2{font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(28px,5vw,44px);text-transform:uppercase;
+    text-align:center;margin-bottom:14px;letter-spacing:-.01em}
+  .lp-section h2 .r{color:var(--red)}
+  .lp-section .lp-lead{text-align:center;color:var(--muted);max-width:560px;margin:0 auto 40px;font-size:16px;line-height:1.6}
+  .lp-feats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .lp-feat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:26px}
+  .lp-feat .lp-ic{font-size:24px;margin-bottom:14px}
+  .lp-feat h3{font-family:'Archivo',sans-serif;font-weight:700;font-size:17px;margin-bottom:8px}
+  .lp-feat p{color:var(--muted);font-size:14px;line-height:1.55}
+  .lp-tools{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .lp-tool{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:flex;gap:16px;align-items:flex-start}
+  .lp-tool .lp-mono{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--red);
+    border:1px solid var(--line);border-radius:9px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;flex:none}
+  .lp-tool h3{font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+  .lp-tool p{color:var(--muted);font-size:13.5px;line-height:1.5}
+  .lp-badge{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+    padding:2px 8px;border-radius:100px}
+  .lp-badge.live{background:rgba(229,57,44,.16);color:var(--red-bright)}
+  .lp-badge.soon{background:rgba(255,255,255,.06);color:var(--muted)}
+  .lp-final{text-align:center;padding:72px 0 40px}
+  .lp-final h2{margin-bottom:20px}
+  .lp-foot{text-align:center;padding:30px 0 50px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px;border-top:1px solid var(--line-soft)}
+  @media(max-width:720px){
+    .lp-feats{grid-template-columns:1fr}
+    .lp-tools{grid-template-columns:1fr}
+    .lp-nav .name{display:none}
+  }
   .gate-inner{position:relative;width:100%;max-width:400px;text-align:center}
   .auth-logo{width:62px;height:62px;border-radius:14px;margin:0 auto 20px;display:block}
   .gate-mark{font-size:clamp(48px,13vw,80px);margin-bottom:4px}
@@ -268,8 +332,58 @@
     </div>
   </div>
 
+  <!-- LANDING -->
+  <div class="landing" id="landing">
+    <div class="lp-glow"></div>
+    <div class="lp-inner">
+      <nav class="lp-nav">
+        <div class="brand"><span class="ec-logo" role="img" aria-label="Exposure Club"></span><span class="name">Exposure Club</span></div>
+        <div class="lp-nav-btns">
+          <button class="lp-login" id="lp-login">Log In</button>
+          <button class="lp-cta" id="lp-signup-top">Get Started</button>
+        </div>
+      </nav>
+
+      <header class="lp-hero">
+        <span class="lp-eyebrow">&#128274; The Members Toolkit</span>
+        <h1>Grow faster with<br>the <span class="r">right tools.</span></h1>
+        <p>Exposure Club Marketing Tools is a growing suite built for TikTok organic marketers. Download clean content, generate hooks, and move faster &#8212; all from one login, one credit wallet.</p>
+        <div class="lp-hero-btns">
+          <button class="lp-big" id="lp-signup-hero">Get Started Free</button>
+          <button class="lp-ghost" id="lp-login-hero">I have an account</button>
+        </div>
+        <div class="lp-teaser">membership starts at <b>$20/mo</b> &#183; free credits on signup</div>
+      </header>
+
+      <section class="lp-section">
+        <h2>Why <span class="r">EC Tools</span></h2>
+        <p class="lp-lead">Everything you need to run TikTok organic, without juggling ten sketchy websites.</p>
+        <div class="lp-feats">
+          <div class="lp-feat"><div class="lp-ic">&#9889;</div><h3>Clean downloads</h3><p>Grab TikTok &amp; Instagram videos with no watermark &#8212; clean mp4 or mp3, every time.</p></div>
+          <div class="lp-feat"><div class="lp-ic">&#128273;</div><h3>One login, one wallet</h3><p>Every tool shares a single credit balance. No separate accounts, no mess.</p></div>
+          <div class="lp-feat"><div class="lp-ic">&#128640;</div><h3>Always growing</h3><p>New tools ship regularly &#8212; hook generators, clip toolkits, and more on the way.</p></div>
+        </div>
+      </section>
+
+      <section class="lp-section">
+        <h2>The <span class="r">Toolkit</span></h2>
+        <p class="lp-lead">One suite, growing fast. Here's what's inside.</p>
+        <div class="lp-tools" id="lp-tools"></div>
+      </section>
+
+      <section class="lp-final">
+        <h2>Ready to <span class="r">start?</span></h2>
+        <p class="lp-lead">Sign up in seconds and get free credits to try it out.</p>
+        <button class="lp-big" id="lp-signup-final">Get Started Free</button>
+      </section>
+
+      <div class="lp-foot">&copy; Exposure Club &#183; Marketing Tools</div>
+    </div>
+  </div>
+
   <!-- AUTH -->
   <div class="gate" id="gate">
+    <button class="lp-login" id="auth-back" style="position:absolute;top:24px;left:24px">&#8592; home</button>
     <div class="gate-inner">
       <span class="ec-logo auth-logo" role="img" aria-label="Exposure Club"></span>
       <h1 class="glitch gate-mark" id="gate-mark">EC<span class="dot-red">.</span></h1>
@@ -460,8 +574,32 @@ function showView(name){
   try{ window.scrollTo(0,0); }catch(_){}
   if(name==='downloader' && link) setTimeout(()=>link.focus(),120);
 }
-function enterHub(){ gate.classList.add('hide'); topbar.hidden=false; showView('dashboard'); }
-function showAuth(){ gate.classList.remove('hide'); topbar.hidden=true; setTimeout(()=>emailIn.focus(),100); }
+function enterHub(){ hideLanding(); gate.classList.add('hide'); topbar.hidden=false; showView('dashboard'); }
+function showAuth(){ hideLanding(); gate.classList.remove('hide'); topbar.hidden=true; setTimeout(()=>emailIn.focus(),100); }
+
+// ---- landing ----
+const landing=$('landing');
+function showLanding(){ landing.classList.remove('hide'); gate.classList.add('hide'); topbar.hidden=true; renderLandingTools(); }
+function hideLanding(){ landing.classList.add('hide'); }
+function goAuth(wantMode){
+  if(mode!==wantMode) toggleMode();     // set login vs signup
+  showAuth();
+}
+function renderLandingTools(){
+  const grid=$('lp-tools'); if(!grid) return;
+  grid.innerHTML = TOOLS.map(t=>{
+    const live=t.status==='live';
+    const badge=live?'<span class="lp-badge live">live</span>':'<span class="lp-badge soon">soon</span>';
+    return '<div class="lp-tool"><span class="lp-mono">'+t.mono+'</span><div>'
+      +'<h3>'+t.name+' '+badge+'</h3><p>'+t.blurb+'</p></div></div>';
+  }).join('');
+}
+$('lp-login').addEventListener('click',()=>goAuth('login'));
+$('lp-login-hero').addEventListener('click',()=>goAuth('login'));
+$('lp-signup-top').addEventListener('click',()=>goAuth('signup'));
+$('lp-signup-hero').addEventListener('click',()=>goAuth('signup'));
+$('lp-signup-final').addEventListener('click',()=>goAuth('signup'));
+$('auth-back').addEventListener('click',showLanding);
 
 function renderTools(){
   toolsGrid.innerHTML = TOOLS.map(t=>{
@@ -531,7 +669,7 @@ authForm.addEventListener('submit', async (e)=>{
   }finally{ authBtn.disabled=false; }
 });
 
-logoutBtn.addEventListener('click', async ()=>{ if(!DEMO&&supabase) await supabase.auth.signOut(); session=null; setUser(null); showAuth(); });
+logoutBtn.addEventListener('click', async ()=>{ if(!DEMO&&supabase) await supabase.auth.signOut(); session=null; setUser(null); topbar.hidden=true; showLanding(); });
 
 async function refreshBalance(){
   if(DEMO){ setCredits(demoCredits); return demoCredits; }
@@ -775,14 +913,14 @@ resetForm.addEventListener('submit', async (e)=>{
 
 renderTools();
 (async function init(){
-  if(DEMO){ showAuth(); return; }
-  if(!supabase){ showErr(authErr,'server keys not set yet.'); showAuth(); return; }
+  if(DEMO){ showLanding(); return; }
+  if(!supabase){ showLanding(); return; }
   // if this page load is a password-recovery link, wait for the RECOVERY event — don't auto-login
   const isRecoveryLink = /type=recovery/.test(window.location.hash) || /type=recovery/.test(window.location.search);
   const { data } = await supabase.auth.getSession();
   if(isRecoveryLink){ recovering=true; showAuth(); }
   else if(data.session){ session=data.session; await refreshBalance(); enterHub(); }
-  else showAuth();
+  else showLanding();
   supabase.auth.onAuthStateChange(async (evt,s)=>{
     // password recovery: user clicked the reset link — show the reset screen, don't log in
     if(evt==='PASSWORD_RECOVERY'){
