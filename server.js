@@ -48,12 +48,10 @@ fs.mkdirSync(WORK, { recursive: true });
 
 // which platforms we accept, and what each costs
 const TT_RE = /^https?:\/\/([a-z0-9-]+\.)?(tiktok\.com|vt\.tiktok\.com|vm\.tiktok\.com)\//i;
-const YT_RE = /^https?:\/\/([a-z0-9-]+\.)?(youtube\.com|youtu\.be)\//i;
 const IG_RE = /^https?:\/\/([a-z0-9-]+\.)?instagram\.com\//i;
 
 function platformFor(url) {
   if (TT_RE.test(url)) return { name: 'tiktok', cost: 1 };
-  if (YT_RE.test(url)) return { name: 'youtube', cost: 2 };
   if (IG_RE.test(url)) return { name: 'instagram', cost: 2 };
   return null;
 }
@@ -102,23 +100,14 @@ app.post('/api/download', async (req, res) => {
       return res.status(400).json({ error: "unsupported link — use TikTok, YouTube, or Instagram." });
     }
 
-    // platform-specific yt-dlp flags. YouTube blocks cloud-server IPs with a
-    // bot-check; the android player client sidesteps it. tiktok/ig need nothing.
-    const extra = platform.name === 'youtube'
-      ? ['--extractor-args', 'youtube:player_client=android,web']
-      : [];
-
-   // 3) metadata first — proves the video is real & reachable, so we don't
+    // 3) metadata first — proves the video is real & reachable, so we don't
     //    charge a credit for dead / private links
     let meta = {};
     try {
-      const { stdout } = await ytdlp(['-j', '--no-warnings', '--no-playlist', ...extra, clean]);
+      const { stdout } = await ytdlp(['-j', '--no-warnings', '--no-playlist', clean]);
       meta = JSON.parse(stdout.trim().split('\n')[0]);
-    } catch (err) {
-      // TEMP DEBUG: surface the real reason so we can see what yt-dlp says
-      const detail = ((err && (err.stderr || err.message)) || '').toString().slice(-300);
-      console.error('YTDLP META FAIL:', detail);
-      return res.status(422).json({ error: "couldn't reach that video — " + (detail || 'unknown') });
+    } catch {
+      return res.status(422).json({ error: "couldn't reach that video — might be private or dead." });
     }
 
    // 4) spend this platform's credit cost atomically. false = not enough credits
@@ -131,7 +120,7 @@ app.post('/api/download', async (req, res) => {
     const id = randomUUID();
     const outTpl = path.join(WORK, `${id}.%(ext)s`);
     const base = ['--no-warnings', '--no-playlist', '--restrict-filenames',
-                  '--force-overwrites', '--no-part', ...extra, '-o', outTpl];
+                  '--force-overwrites', '--no-part', '-o', outTpl];
     const args = audioOnly
       ? [...base, '-x', '--audio-format', 'mp3', '--audio-quality', '0', clean]
       : [...base, '-S', 'res,fps,vcodec:h264,ext:mp4:m4a', '-f', 'bv*+ba/b', '--merge-output-format', 'mp4', clean];
