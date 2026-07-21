@@ -30,6 +30,12 @@ const supabase = (SUPABASE_URL && SUPABASE_SERVICE_KEY)
 // Paddle — webhook signature secret (from Paddle → Notifications → your destination)
 const PADDLE_WEBHOOK_SECRET = process.env.PADDLE_WEBHOOK_SECRET || '';
 
+// Anthropic (Claude) — powers the Hook Generator. Server-side only.
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
+const HOOK_COST = 3;                    // credits per generation (8 hooks)
+const HOOK_MODEL = 'claude-haiku-4-5';  // cheapest/fast
+const MAX_EXAMPLES_CHARS = 4000;
+
 app.use(cors());
 
 // Paddle webhook MUST read the raw body to verify the signature,
@@ -285,6 +291,88 @@ app.post('/api/redeem', async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'redeem failed — try again.' });
+  }
+});
+
+app.post('/api/hooks', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured on the server yet.' });
+    if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'generator not configured yet.' });
+
+    // 1) must be logged in
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+
+    // 2) validate input
+    const examples = (req.body && req.body.examples ? String(req.body.examples) : '').trim();
+    if (!examples) return res.status(400).json({ error: 'add a few example hooks first — that\u2019s what it generates from.' });
+    if (examples.length > MAX_EXAMPLES_CHARS) return res.status(400).json({ error: 'too many examples — trim it down a bit.' });
+
+    // 3) spend credits up front (atomic). false = not enough
+    const { data: ok, error: cErr } = await supabase.rpc('spend_credits', { p_user: user.id, p_amount: HOOK_COST });
+    if (cErr) return res.status(500).json({ error: 'credit check failed — try again.' });
+    if (!ok) return res.status(402).json({ error: 'out of credits' });
+
+    // helper: give the credits back if the AI call fails, so nobody loses credits on our error
+    const refund = async () => { try { await supabase.rpc('add_credits', { p_user: user.id, p_amount: HOOK_COST }); } catch (_) {} };
+
+    const cleanExamples = examples
+      .split('\n').filter((l) => l.trim()).map((l) => '- ' + l.trim()).join('\n');
+
+    const prompt = `You are an elite TikTok organic copywriter. Below are example hooks that perform well. Study them extremely closely — their voice, rhythm, capitalization, slang, punctuation, length, and the structural patterns behind why they work.\n\nEXAMPLE HOOKS:\n${cleanExamples}\n\nNow generate 8 brand-new hooks that feel like they came from the exact same person who wrote those examples.\n\nRules:\n- Match the examples' DNA: same energy, same voice, same kind of structures and rhythm. If they're lowercase, you're lowercase.\n- Do NOT copy any example verbatim — these must be new.\n- Each hook is a scroll-stopping first line / text overlay. Native to TikTok, never salesy.\n- Vary the structure across the 8 so they don't all sound identical.\n- Keep each roughly the same length as the examples.\n- No hashtags. No emojis unless the examples use them.\n\nRespond ONLY with a JSON array of 8 strings, no preamble, no markdown, no backticks.`;
+
+    let r;
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: HOOK_MODEL,
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+    } catch (e) {
+      await refund();
+      return res.status(502).json({ error: 'couldn\u2019t reach the generator. Try again — your credits were not charged.' });
+    }
+
+    if (!r.ok) {
+      const errText = await r.text().catch(() => '');
+      console.error('Anthropic API error:', errText);
+      await refund();
+      return res.status(502).json({ error: 'generation failed. Try again — your credits were not charged.' });
+    }
+
+    const data = await r.json();
+    let text = (data.content || []).map((i) => (i.type === 'text' ? i.text : '')).join('');
+    text = text.replace(/```json|```/g, '').trim();
+
+    let hooks;
+    try { hooks = JSON.parse(text); } catch (e) {
+      await refund();
+      return res.status(502).json({ error: 'got a malformed response. Try again — your credits were not charged.' });
+    }
+    if (!Array.isArray(hooks) || !hooks.length) {
+      await refund();
+      return res.status(502).json({ error: 'got an empty response. Try again — your credits were not charged.' });
+    }
+
+    // fresh balance so the UI updates
+    let creditsLeft = null;
+    try {
+      const { data: prof } = await supabase.from('profiles').select('credits').eq('id', user.id).single();
+      if (prof) creditsLeft = prof.credits;
+    } catch (_) {}
+
+    return res.json({ hooks, creditsLeft });
+  } catch (e) {
+    console.error('hooks handler error:', e);
+    return res.status(500).json({ error: 'something went wrong. Try again.' });
   }
 });
 
