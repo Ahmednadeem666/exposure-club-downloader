@@ -45,6 +45,10 @@
   .credits .c-label{color:var(--muted);font-weight:400}
   .userchip{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);border:1px solid var(--line);border-radius:100px;padding:6px 12px}
   .userchip b{color:var(--red);font-weight:700}
+  .buycred{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;
+    background:linear-gradient(180deg,var(--red-bright),var(--red));color:#fff;border:none;border-radius:100px;
+    padding:8px 16px;transition:filter .15s;white-space:nowrap}
+  .buycred:hover{filter:brightness(1.08)}
   .logout{background:none;border:1px solid var(--line-soft);color:var(--muted);cursor:pointer;
     font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
     border-radius:100px;padding:7px 12px;transition:color .15s,border-color .15s}
@@ -317,6 +321,7 @@
       <div class="nav-right">
         <span class="userchip" id="userchip" hidden>@<b id="user-name"></b></span>
         <span class="credits" id="credits" style="cursor:pointer" title="Get more credits">&#9889; <b id="credit-num">0</b> <span class="c-label">credits</span> <span style="color:var(--red-bright);font-weight:700">+</span></span>
+        <button class="buycred" id="buycred-btn">Buy Credits</button>
         <button class="logout" id="logout">log out</button>
       </div>
     </nav>
@@ -557,18 +562,19 @@ function showToast(msg){
 async function watchForCredits(before){
   const start=Date.now();
   const startBal = (before==null?0:before);
-  // poll every 2s for up to 40s
-  while(Date.now()-start < 40000){
+  showToast('&#9889; payment received &#8212; adding your credits&#8230;');
+  // poll every 2s for up to 60s
+  while(Date.now()-start < 60000){
     await new Promise(r=>setTimeout(r,2000));
     const now = await refreshBalance();
     if(now!=null && now > startBal){
       const added = now - startBal;
-      showToast(`&#10003; <b>${added} credits</b> added to your balance!`);
+      showToast(`&#10003; <b>${added} credits</b> added &#8212; you're all set!`);
       return;
     }
   }
   // fallback: didn't detect within window (webhook slow) — soft nudge
-  showToast('payment received &#8212; credits will appear shortly.');
+  showToast('payment received &#8212; credits will appear in a moment. try refreshing.');
 }
 
 const TT_RE=/(?:tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com|instagram\.com)/i;
@@ -626,8 +632,9 @@ function initPaddle(){
       token: PADDLE_TOKEN,
       eventCallback: (ev)=>{
         if(!ev) return;
-        if(ev.name==='checkout.completed'){
-          // close the pricing modal and watch for the webhook to land credits
+        console.log('PADDLE EVENT:', ev.name, ev);   // TEMP DEBUG — remove later
+        // handle several possible completion event names across Paddle versions
+        if(ev.name==='checkout.completed' || ev.name==='checkout.payment.completed'){
           closePricing();
           watchForCredits(balanceBeforeCheckout);
         }
@@ -674,12 +681,13 @@ async function openCheckout(priceId){
     items:[{ priceId, quantity:1 }],
     customer: email ? { email } : undefined,
     customData:{ user_id: session.user.id },   // <-- server reads this in the webhook
-    settings:{ theme:'dark', displayMode:'overlay', successUrl: window.location.origin }
+    settings:{ theme:'dark', displayMode:'overlay' }
   });
 }
 
 $('sub-btn').addEventListener('click', openPricing);
 $('credits').addEventListener('click', openPricing);
+$('buycred-btn').addEventListener('click', openPricing);
 $('pm-close').addEventListener('click', closePricing);
 pmOverlay.addEventListener('click', (e)=>{ if(e.target===pmOverlay) closePricing(); });
 
