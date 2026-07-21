@@ -46,6 +46,12 @@ const ADVISOR_COST = 1;                  // credits per question
 const ADVISOR_MODEL = 'claude-sonnet-4-6';  // smarter answers for expert advice
 const MAX_QUESTION_CHARS = 1500;
 
+// Content Planner
+const PLANNER_COST = 4;                   // credits per plan
+const PLANNER_MODEL = 'claude-haiku-4-5';
+const MAX_PLAN_TOPIC_CHARS = 600;
+const ALLOWED_PLAN_DAYS = [3, 7, 14, 30];
+
 app.use(cors());
 
 // Paddle webhook MUST read the raw body to verify the signature,
@@ -559,6 +565,198 @@ Rules:
   } catch (e) {
     console.error('advisor handler error:', e);
     return res.status(500).json({ error: 'something went wrong. Try again.' });
+  }
+});
+
+// ---- Content Planner ----
+// Generate a plan (spends credits), save it, and return it.
+app.post('/api/plan/generate', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured on the server yet.' });
+    if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'planner not configured yet.' });
+
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+
+    const topic = (req.body && req.body.topic ? String(req.body.topic) : '').trim();
+    let days = parseInt(req.body && req.body.days, 10);
+    if (!topic) return res.status(400).json({ error: 'tell it what your content is about first.' });
+    if (topic.length > MAX_PLAN_TOPIC_CHARS) return res.status(400).json({ error: 'keep the topic a bit shorter.' });
+    if (!ALLOWED_PLAN_DAYS.includes(days)) days = 7;
+
+    // spend credits up front
+    const { data: ok, error: cErr } = await supabase.rpc('spend_credits', { p_user: user.id, p_amount: PLANNER_COST });
+    if (cErr) return res.status(500).json({ error: 'credit check failed — try again.' });
+    if (!ok) return res.status(402).json({ error: 'out of credits' });
+
+    const refund = async () => { try { await supabase.rpc('add_credits', { p_user: user.id, p_amount: PLANNER_COST }); } catch (_) {} };
+
+    const prompt = `You are an elite TikTok organic content strategist for affiliate/CPA marketers. Build a ${days}-day posting plan for this creator.
+
+TOPIC / NICHE / OFFER: ${topic}
+
+For each of the ${days} days, give 2 post ideas ("slots"). Each slot has:
+- "text": the actual hook / concept for that post (a scroll-stopping idea they can shoot), written in casual TikTok voice
+- "format": the content format (e.g. "faceless slideshow", "talking head", "green screen", "story time", "POV")
+
+Vary formats and angles across the plan so it doesn't get repetitive. Keep each idea punchy and specific to the topic.
+
+Respond ONLY with a JSON array of exactly ${days} objects, one per day, in this shape:
+[{"day":1,"slots":[{"text":"...","format":"..."},{"text":"...","format":"..."}]}, ...]
+No preamble, no markdown, no backticks.`;
+
+    let r;
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: PLANNER_MODEL,
+          max_tokens: 3000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+    } catch (e) {
+      await refund();
+      return res.status(502).json({ error: 'couldn\u2019t reach the planner. Try again — your credits were not charged.' });
+    }
+
+    if (!r.ok) {
+      const errText = await r.text().catch(() => '');
+      console.error('Anthropic API error:', errText);
+      await refund();
+      return res.status(502).json({ error: 'generation failed. Try again — your credits were not charged.' });
+    }
+
+    const data = await r.json();
+    let text = (data.content || []).map((i) => (i.type === 'text' ? i.text : '')).join('');
+    text = text.replace(/```json|```/g, '').trim();
+
+    let rawDays;
+    try { rawDays = JSON.parse(text); } catch (e) {
+      await refund();
+      return res.status(502).json({ error: 'got a malformed plan. Try again — your credits were not charged.' });
+    }
+    if (!Array.isArray(rawDays) || !rawDays.length) {
+      await refund();
+      return res.status(502).json({ error: 'got an empty plan. Try again — your credits were not charged.' });
+    }
+
+    // normalize into our stored shape: [{date, slots:[{text, format, posted}]}]
+    const start = new Date();
+    const planData = rawDays.slice(0, days).map((d, idx) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + idx);
+      const slots = Array.isArray(d.slots) ? d.slots : [];
+      return {
+        date: date.toISOString().slice(0, 10),
+        slots: slots.map((s) => ({
+          text: String(s && s.text ? s.text : '').slice(0, 500),
+          format: String(s && s.format ? s.format : '').slice(0, 60),
+          posted: false,
+        })),
+      };
+    });
+
+    const title = topic.length > 48 ? topic.slice(0, 48) + '\u2026' : topic;
+
+    const { data: inserted, error: insErr } = await supabase
+      .from('content_plans')
+      .insert({ user_id: user.id, title, days, topic, plan: planData })
+      .select()
+      .single();
+
+    if (insErr) {
+      console.error('plan insert error:', insErr);
+      await refund();
+      return res.status(500).json({ error: 'couldn\u2019t save the plan. Try again — your credits were not charged.' });
+    }
+
+    let creditsLeft = null;
+    try {
+      const { data: prof } = await supabase.from('profiles').select('credits').eq('id', user.id).single();
+      if (prof) creditsLeft = prof.credits;
+    } catch (_) {}
+
+    return res.json({ plan: inserted, creditsLeft });
+  } catch (e) {
+    console.error('plan generate error:', e);
+    return res.status(500).json({ error: 'something went wrong. Try again.' });
+  }
+});
+
+// List the user's saved plans (newest first).
+app.get('/api/plan/list', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured.' });
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+    const { data, error } = await supabase
+      .from('content_plans')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    if (error) return res.status(500).json({ error: 'couldn\u2019t load your plans.' });
+    return res.json({ plans: data || [] });
+  } catch (e) {
+    console.error('plan list error:', e);
+    return res.status(500).json({ error: 'something went wrong.' });
+  }
+});
+
+// Toggle a single post slot's "posted" flag.
+app.post('/api/plan/toggle', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured.' });
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+
+    const planId = req.body && req.body.planId ? String(req.body.planId) : '';
+    const dayIdx = parseInt(req.body && req.body.dayIdx, 10);
+    const slotIdx = parseInt(req.body && req.body.slotIdx, 10);
+    if (!planId || isNaN(dayIdx) || isNaN(slotIdx)) return res.status(400).json({ error: 'bad request.' });
+
+    // load the plan (RLS ensures it's the user's own)
+    const { data: row, error: getErr } = await supabase
+      .from('content_plans').select('*').eq('id', planId).eq('user_id', user.id).single();
+    if (getErr || !row) return res.status(404).json({ error: 'plan not found.' });
+
+    const plan = Array.isArray(row.plan) ? row.plan : [];
+    if (!plan[dayIdx] || !plan[dayIdx].slots || !plan[dayIdx].slots[slotIdx]) {
+      return res.status(400).json({ error: 'slot not found.' });
+    }
+    plan[dayIdx].slots[slotIdx].posted = !plan[dayIdx].slots[slotIdx].posted;
+
+    const { error: updErr } = await supabase
+      .from('content_plans').update({ plan }).eq('id', planId).eq('user_id', user.id);
+    if (updErr) return res.status(500).json({ error: 'couldn\u2019t update.' });
+
+    return res.json({ ok: true, posted: plan[dayIdx].slots[slotIdx].posted });
+  } catch (e) {
+    console.error('plan toggle error:', e);
+    return res.status(500).json({ error: 'something went wrong.' });
+  }
+});
+
+// Delete a plan.
+app.post('/api/plan/delete', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured.' });
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+    const planId = req.body && req.body.planId ? String(req.body.planId) : '';
+    if (!planId) return res.status(400).json({ error: 'bad request.' });
+    const { error } = await supabase
+      .from('content_plans').delete().eq('id', planId).eq('user_id', user.id);
+    if (error) return res.status(500).json({ error: 'couldn\u2019t delete.' });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('plan delete error:', e);
+    return res.status(500).json({ error: 'something went wrong.' });
   }
 });
 
