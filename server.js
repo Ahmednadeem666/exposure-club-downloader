@@ -36,6 +36,11 @@ const HOOK_COST = 3;                    // credits per generation (8 hooks)
 const HOOK_MODEL = 'claude-haiku-4-5';  // cheapest/fast
 const MAX_EXAMPLES_CHARS = 4000;
 
+// UGC Script Generator
+const SCRIPT_COST = 4;                   // credits per script (longer output)
+const SCRIPT_MODEL = 'claude-haiku-4-5';
+const MAX_TOPIC_CHARS = 600;
+
 app.use(cors());
 
 // Paddle webhook MUST read the raw body to verify the signature,
@@ -372,6 +377,103 @@ app.post('/api/hooks', async (req, res) => {
     return res.json({ hooks, creditsLeft });
   } catch (e) {
     console.error('hooks handler error:', e);
+    return res.status(500).json({ error: 'something went wrong. Try again.' });
+  }
+});
+
+app.post('/api/script', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured on the server yet.' });
+    if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'generator not configured yet.' });
+
+    // 1) must be logged in
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+
+    // 2) validate input
+    const topic = (req.body && req.body.topic ? String(req.body.topic) : '').trim();
+    const vibe = (req.body && req.body.vibe ? String(req.body.vibe) : '').trim();
+    const styleRaw = (req.body && req.body.style ? String(req.body.style) : 'faceless').trim().toLowerCase();
+    const style = styleRaw === 'talking' ? 'talking' : 'faceless';
+    if (!topic) return res.status(400).json({ error: 'tell it what the video is about first.' });
+    if (topic.length > MAX_TOPIC_CHARS) return res.status(400).json({ error: 'keep the topic a bit shorter.' });
+    if (vibe.length > MAX_TOPIC_CHARS) return res.status(400).json({ error: 'keep the vibe a bit shorter.' });
+
+    // 3) spend credits up front (atomic)
+    const { data: ok, error: cErr } = await supabase.rpc('spend_credits', { p_user: user.id, p_amount: SCRIPT_COST });
+    if (cErr) return res.status(500).json({ error: 'credit check failed — try again.' });
+    if (!ok) return res.status(402).json({ error: 'out of credits' });
+
+    const refund = async () => { try { await supabase.rpc('add_credits', { p_user: user.id, p_amount: SCRIPT_COST }); } catch (_) {} };
+
+    const styleLine = style === 'talking'
+      ? 'STYLE: Talking-head UGC. A real person speaks to camera. Write it as natural spoken lines the creator says out loud — conversational, first-person, like they\u2019re talking to a friend.'
+      : 'STYLE: Faceless voiceover. No person on camera. Write a voiceover narration meant to play over B-roll / slideshow images. Include brief [on-screen: ...] cues for what visual shows during each beat.';
+
+    const vibeLine = vibe ? `\nVIBE / TONE: ${vibe}` : '';
+
+    const prompt = `You are an elite short-form UGC scriptwriter for TikTok organic marketing. You write scripts that stop the scroll and drive action without feeling salesy.
+
+${styleLine}
+
+VIDEO TOPIC / OFFER: ${topic}${vibeLine}
+
+Write ONE complete short-form video script (about 20-40 seconds spoken). Structure it clearly with these labeled beats:
+- HOOK (first 1-2 lines — must stop the scroll instantly)
+- BODY (2-4 short beats that build interest / show the value)
+- CTA (a natural call to action — never pushy, native to TikTok)
+
+Rules:
+- Native TikTok voice. Casual, punchy, real. Never corporate or salesy.
+- Keep total length realistic for 20-40 seconds of talking.
+- ${style === 'talking' ? 'Write spoken lines only — what the person actually says.' : 'Write the voiceover lines, each with a short [on-screen: ...] visual cue.'}
+- No hashtags. No emojis unless they fit the vibe.
+
+Respond with ONLY the script, using the labeled beats above (HOOK / BODY / CTA). No preamble, no explanation, no markdown code fences.`;
+
+    let r;
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: SCRIPT_MODEL,
+          max_tokens: 1200,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+    } catch (e) {
+      await refund();
+      return res.status(502).json({ error: 'couldn\u2019t reach the generator. Try again — your credits were not charged.' });
+    }
+
+    if (!r.ok) {
+      const errText = await r.text().catch(() => '');
+      console.error('Anthropic API error:', errText);
+      await refund();
+      return res.status(502).json({ error: 'generation failed. Try again — your credits were not charged.' });
+    }
+
+    const data = await r.json();
+    let script = (data.content || []).map((i) => (i.type === 'text' ? i.text : '')).join('').trim();
+    if (!script) {
+      await refund();
+      return res.status(502).json({ error: 'got an empty response. Try again — your credits were not charged.' });
+    }
+
+    let creditsLeft = null;
+    try {
+      const { data: prof } = await supabase.from('profiles').select('credits').eq('id', user.id).single();
+      if (prof) creditsLeft = prof.credits;
+    } catch (_) {}
+
+    return res.json({ script, creditsLeft });
+  } catch (e) {
+    console.error('script handler error:', e);
     return res.status(500).json({ error: 'something went wrong. Try again.' });
   }
 });
