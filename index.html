@@ -390,7 +390,7 @@
 <div class="emoji-bg" id="emoji-bg" aria-hidden="true"></div>
   <div class="ticker" aria-hidden="true">
     <div class="track">
-      <span>Exposure Club Toolkit <b>&#9650;</b></span><span>One Login <b>&#9650;</b></span><span>One Credit Wallet <b>&#9650;</b></span><span>YOINK Downloader: Live <b>&#9650;</b></span><span>More Dropping <b>&#9650;</b></span><span>Exposure Club Toolkit <b>&#9650;</b></span><span>One Login <b>&#9650;</b></span><span>One Credit Wallet <b>&#9650;</b></span><span>YOINK Downloader: Live <b>&#9650;</b></span><span>More Dropping <b>&#9650;</b></span>
+      <span>AI Hook Generator <b>&#9650;</b></span><span>UGC Script Writer <b>&#9650;</b></span><span>One Login, One Wallet <b>&#9650;</b></span><span>Free Video Downloader <b>&#9650;</b></span><span>More Tools Dropping <b>&#9650;</b></span><span>AI Hook Generator <b>&#9650;</b></span><span>UGC Script Writer <b>&#9650;</b></span><span>One Login, One Wallet <b>&#9650;</b></span><span>Free Video Downloader <b>&#9650;</b></span><span>More Tools Dropping <b>&#9650;</b></span>
     </div>
   </div>
 
@@ -409,9 +409,9 @@
       </nav>
 
       <header class="lp-hero">
-        <span class="lp-eyebrow">&#128274; The Members Toolkit</span>
-        <h1>Grow faster with<br>the <span class="r">right tools.</span></h1>
-        <p>Exposure Club Marketing Tools is a growing suite built for TikTok organic marketers. Download clean content, generate hooks, and move faster &#8212; all from one login, one credit wallet.</p>
+        <span class="lp-eyebrow">&#9889; AI Tools for TikTok Organic</span>
+        <h1>Create content that<br><span class="r">actually converts.</span></h1>
+        <p>Exposure Club Marketing Tools is an AI-powered suite for TikTok organic marketers. Generate scroll-stopping hooks, write UGC scripts that convert, and plan your content &#8212; all from one login, one credit wallet. Plus a free video downloader on the side.</p>
         <div class="lp-hero-btns">
           <button class="lp-big" id="lp-signup-hero">Get Started Free</button>
           <button class="lp-ghost" id="lp-login-hero">I have an account</button>
@@ -423,9 +423,9 @@
         <h2>Why <span class="r">EC Tools</span></h2>
         <p class="lp-lead">Everything you need to run TikTok organic, without juggling ten sketchy websites.</p>
         <div class="lp-feats">
-          <div class="lp-feat"><div class="lp-ic">&#9889;</div><h3>Clean downloads</h3><p>Grab TikTok &amp; Instagram videos with no watermark &#8212; clean mp4 or mp3, every time.</p></div>
+          <div class="lp-feat"><div class="lp-ic">&#9889;</div><h3>AI hooks &amp; scripts</h3><p>Generate scroll-stopping hooks in your own voice and full UGC scripts that convert &#8212; in seconds.</p></div>
           <div class="lp-feat"><div class="lp-ic">&#128273;</div><h3>One login, one wallet</h3><p>Every tool shares a single credit balance. No separate accounts, no mess.</p></div>
-          <div class="lp-feat"><div class="lp-ic">&#128640;</div><h3>Always growing</h3><p>New tools ship regularly &#8212; hook generators, clip toolkits, and more on the way.</p></div>
+          <div class="lp-feat"><div class="lp-ic">&#127873;</div><h3>Free downloader included</h3><p>Grab TikTok &amp; Instagram videos with no watermark &#8212; a free bonus on top of the AI suite.</p></div>
         </div>
       </section>
 
@@ -654,21 +654,21 @@ const $ = (id)=>document.getElementById(id);
 
 /* TOOLS — edit costs / status here as you build each one */
 const TOOLS = [
-  { id:'downloader', mono:'YK', name:'YOINK Downloader', status:'live', cost:1,
-    blurb:'Grab TikTok & Instagram — clean mp4 or mp3, zero watermark.',
-    bullets:['TikTok · Instagram','MP4 + audio-only','No watermark'] },
   { id:'hookgen', mono:'HG', name:'Hook Generator', status:'live', cost:3,
     blurb:'Feed it your winners, get fresh hooks in your own voice.',
     bullets:['Learns your style','8 hooks per gen','Tap to copy'] },
+  { id:'ugc', mono:'SG', name:'UGC Script Generator', status:'live', cost:4,
+    blurb:'Scripts that convert, ready to shoot.',
+    bullets:['Faceless or talking-head','Hook to CTA','Copy-ready'] },
   { id:'cliptoolkit', mono:'CT', name:'Clip Toolkit', status:'soon', cost:2,
     blurb:'Trim, reframe to vertical, burn captions, export clean.',
     bullets:['1080p MP4','TikTok captions','Emoji picker'] },
   { id:'planner', mono:'CP', name:'Content Planner', status:'soon', cost:1,
     blurb:'Plan your posting like a system, not a guess.',
     bullets:['Calendar view','Batch slots','Reminders'] },
-  { id:'ugc', mono:'SG', name:'UGC Script Generator', status:'live', cost:4,
-    blurb:'Scripts that convert, ready to shoot.',
-    bullets:['Faceless or talking-head','Hook to CTA','Copy-ready'] },
+  { id:'downloader', mono:'YK', name:'YOINK Downloader', status:'live', cost:1,
+    blurb:'Free bonus — grab TikTok & Instagram clips, zero watermark.',
+    bullets:['TikTok · Instagram','MP4 + audio-only','No watermark'] },
 ];
 const DL_COST = (TOOLS.find(t=>t.id==='downloader')||{cost:1}).cost;
 
