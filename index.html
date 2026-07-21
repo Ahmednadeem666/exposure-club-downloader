@@ -23,6 +23,21 @@
   body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
     background:radial-gradient(95% 55% at 50% -12%,rgba(229,57,44,.20),transparent 60%),radial-gradient(60% 40% at 50% 0%,rgba(229,57,44,.10),transparent 72%)}
 
+  /* floating tool emojis — pure background, behind all content */
+  .emoji-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  .emoji-bg span{position:absolute;bottom:-60px;font-size:34px;opacity:.15;
+    will-change:transform;animation:floatUp linear infinite}
+  @keyframes floatUp{
+    0%{transform:translateY(0) rotate(0deg);opacity:0}
+    12%{opacity:.15}
+    88%{opacity:.15}
+    100%{transform:translateY(-115vh) rotate(22deg);opacity:0}
+  }
+  @media (prefers-reduced-motion: reduce){ .emoji-bg{display:none} }
+  /* emoji layer contained inside landing/gate screens */
+  .emoji-bg-screen{position:absolute;inset:0;z-index:0}
+  .lp-inner, .gate-inner{position:relative;z-index:1}
+
   .ticker{position:relative;z-index:2;overflow:hidden;white-space:nowrap;border-bottom:1px solid var(--line);
     background:rgba(0,0,0,.35);font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;
     text-transform:uppercase;color:var(--muted);padding:9px 0}
@@ -178,6 +193,21 @@
   .hg-loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:13px;margin-top:8px}
   .hg-spin{width:15px;height:15px;border:2px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* UGC Script Generator */
+  .sg-styles{display:flex;gap:8px;margin-bottom:14px}
+  .sg-style{flex:1;background:var(--bg-soft);border:1px solid var(--line);color:var(--muted);border-radius:10px;
+    padding:12px;font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all .15s}
+  .sg-style:hover{border-color:var(--red)}
+  .sg-style.active{background:rgba(229,57,44,.10);border-color:var(--red);color:var(--text)}
+  .sg-result{margin-top:26px;position:relative}
+  .sg-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px 20px;
+    white-space:pre-wrap;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.75;color:var(--text);
+    opacity:0;animation:hookIn .35s ease forwards}
+  .sg-copy{position:absolute;top:12px;right:12px;background:var(--bg-soft);border:1px solid var(--line);color:var(--muted);
+    border-radius:8px;padding:7px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;cursor:pointer;transition:all .15s;z-index:2}
+  .sg-copy:hover{border-color:var(--red);color:var(--red-bright)}
+  .sg-copy.copied{border-color:var(--red-bright);color:var(--red-bright)}
 
   .stage{margin-top:26px}
   .card{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
@@ -357,6 +387,7 @@
 <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 </head>
 <body>
+<div class="emoji-bg" id="emoji-bg" aria-hidden="true"></div>
   <div class="ticker" aria-hidden="true">
     <div class="track">
       <span>Exposure Club Toolkit <b>&#9650;</b></span><span>One Login <b>&#9650;</b></span><span>One Credit Wallet <b>&#9650;</b></span><span>YOINK Downloader: Live <b>&#9650;</b></span><span>More Dropping <b>&#9650;</b></span><span>Exposure Club Toolkit <b>&#9650;</b></span><span>One Login <b>&#9650;</b></span><span>One Credit Wallet <b>&#9650;</b></span><span>YOINK Downloader: Live <b>&#9650;</b></span><span>More Dropping <b>&#9650;</b></span>
@@ -365,6 +396,7 @@
 
   <!-- LANDING -->
   <div class="landing" id="landing">
+    <div class="emoji-bg emoji-bg-screen" id="emoji-bg-landing" aria-hidden="true"></div>
     <div class="lp-glow"></div>
     <div class="lp-inner">
       <nav class="lp-nav">
@@ -418,6 +450,7 @@
 
   <!-- AUTH -->
   <div class="gate" id="gate">
+    <div class="emoji-bg emoji-bg-screen" id="emoji-bg-gate" aria-hidden="true"></div>
     <button class="lp-login" id="auth-back" style="position:absolute;top:24px;left:24px">&#8592; home</button>
     <div class="gate-inner">
       <span class="ec-logo auth-logo" role="img" aria-label="Exposure Club"></span>
@@ -561,6 +594,36 @@
       <div class="hg-results" id="hg-results"></div>
     </section>
 
+    <section class="view" id="view-ugc">
+      <button class="back" data-back>&#8592; back to tools</button>
+      <h1 class="glitch" id="sg-mark">SCRIPTS<span class="dot-red">.</span></h1>
+      <p class="sub">tell it your topic &amp; vibe &#8212; get a full <b>hook &#8594; CTA</b> script, ready to shoot. <b>4 credits</b> a gen.</p>
+      <form id="sg-form" autocomplete="off">
+        <div class="sg-styles">
+          <button type="button" class="sg-style active" data-style="faceless">faceless / voiceover</button>
+          <button type="button" class="sg-style" data-style="talking">talking-head</button>
+        </div>
+        <div class="hg-field">
+          <input id="sg-topic" type="text" placeholder="what's the video about? (e.g. a sweepstakes offer that pays $500)" aria-label="Topic" style="width:100%;background:transparent;border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px" />
+        </div>
+        <div class="hg-field" style="margin-top:10px">
+          <input id="sg-vibe" type="text" placeholder="vibe / tone? (optional — e.g. hyped, chill, storytime)" aria-label="Vibe" style="width:100%;background:transparent;border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px" />
+        </div>
+        <div class="hg-row" style="margin-top:12px;justify-content:flex-end">
+          <button class="grab" id="sg-go" type="submit">
+            <span>write script</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <div class="err" id="sg-err" role="alert"></div>
+      </form>
+      <div class="oos" id="sg-oos">
+        <p><b>out of credits.</b> grab more to keep writing.</p>
+        <button class="sub-btn" id="sg-sub-btn">get more &#8594;</button>
+      </div>
+      <div class="sg-result" id="sg-result"></div>
+    </section>
+
     <footer>
       <span>exposure club toolkit</span>
       <span>powered by yt-dlp</span>
@@ -603,9 +666,9 @@ const TOOLS = [
   { id:'planner', mono:'CP', name:'Content Planner', status:'soon', cost:1,
     blurb:'Plan your posting like a system, not a guess.',
     bullets:['Calendar view','Batch slots','Reminders'] },
-  { id:'ugc', mono:'SG', name:'UGC Script Generator', status:'soon', cost:1,
+  { id:'ugc', mono:'SG', name:'UGC Script Generator', status:'live', cost:4,
     blurb:'Scripts that convert, ready to shoot.',
-    bullets:['Offer-aware','Hook to CTA','Copy-ready'] },
+    bullets:['Faceless or talking-head','Hook to CTA','Copy-ready'] },
 ];
 const DL_COST = (TOOLS.find(t=>t.id==='downloader')||{cost:1}).cost;
 
@@ -634,6 +697,7 @@ function showView(name){
   try{ window.scrollTo(0,0); }catch(_){}
   if(name==='downloader' && link) setTimeout(()=>link.focus(),120);
   if(name==='hookgen' && hgExamples) setTimeout(()=>hgExamples.focus(),120);
+  if(name==='ugc' && sgTopic) setTimeout(()=>sgTopic.focus(),120);
 }
 function enterHub(){ hideLanding(); gate.classList.add('hide'); topbar.hidden=false; showView('dashboard'); }
 function showAuth(){ hideLanding(); gate.classList.remove('hide'); topbar.hidden=true; setTimeout(()=>emailIn.focus(),100); }
@@ -673,7 +737,7 @@ function renderTools(){
       +'<div class="cost">'+t.cost+' credit'+(t.cost>1?'s':'')+' / use</div>'+btn+'</article>';
   }).join('');
   toolsGrid.querySelectorAll('.launch[data-tool]').forEach(b=>{
-    b.addEventListener('click',()=>{ const t=b.dataset.tool; if(t==='downloader') showView('downloader'); else if(t==='hookgen') showView('hookgen'); });
+    b.addEventListener('click',()=>{ const t=b.dataset.tool; if(t==='downloader') showView('downloader'); else if(t==='hookgen') showView('hookgen'); else if(t==='ugc') showView('ugc'); });
   });
 }
 
@@ -881,6 +945,62 @@ function renderHooks(hooks){
   });
 }
 
+// ---- UGC Script Generator ----
+const SG_COST = (TOOLS.find(t=>t.id==='ugc')||{cost:4}).cost;
+const sgForm=$('sg-form'), sgTopic=$('sg-topic'), sgVibe=$('sg-vibe'), sgGo=$('sg-go'),
+      sgErr=$('sg-err'), sgResult=$('sg-result'), sgOos=$('sg-oos');
+let sgStyle='faceless';
+
+document.querySelectorAll('.sg-style').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.sg-style').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    sgStyle=btn.dataset.style;
+  });
+});
+
+$('sg-sub-btn')&&$('sg-sub-btn').addEventListener('click',()=>openPricing&&openPricing());
+
+sgForm&&sgForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  clearErr(sgErr); sgOos.classList.remove('show');
+  const topic=sgTopic.value.trim(), vibe=sgVibe.value.trim();
+  if(!topic){ showErr(sgErr,'tell it what the video is about first.'); return; }
+
+  sgGo.disabled=true; sgResult.innerHTML='<div class="hg-loading"><span class="hg-spin"></span>writing your script&#8230;</div>';
+  try{
+    let data;
+    if(DEMO){
+      if(demoCredits<SG_COST){ const er=new Error('out of credits'); er.code=402; throw er; }
+      await new Promise(r=>setTimeout(r,1500));
+      demoCredits-=SG_COST; setCredits(demoCredits);
+      data={ script:'HOOK:\npov: you found the offer nobody\u2019s talking about\n\nBODY:\nso i been testing this for two weeks\nand the payout is actually insane\nno cap, easiest money i\u2019ve pulled all year\n\nCTA:\nlink\u2019s in my bio if you wanna try it too', creditsLeft:demoCredits };
+    } else {
+      const token=session&&session.access_token;
+      const r=await fetch('/api/script',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({topic,vibe,style:sgStyle})});
+      if(!r.ok){ let m='couldn\u2019t generate. try again.'; let code=r.status; try{ m=(await r.json()).error||m; }catch(_){} const er=new Error(m); er.code=code; throw er; }
+      data=await r.json();
+    }
+    if(data.creditsLeft!=null) setCredits(data.creditsLeft); else await refreshBalance();
+    renderScript(data.script||'');
+  }catch(ex){
+    sgResult.innerHTML='';
+    if(ex.code===402){ sgOos.classList.add('show'); setCredits(0); }
+    else showErr(sgErr, ex.message||'something went wrong. try again.');
+  }finally{ sgGo.disabled=false; }
+});
+
+function renderScript(script){
+  if(!script){ sgResult.innerHTML=''; showErr(sgErr,'got an empty response. try again.'); return; }
+  const safe=String(script).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  sgResult.innerHTML='<button class="sg-copy" id="sg-copy">copy</button><div class="sg-card">'+safe+'</div>';
+  $('sg-copy').addEventListener('click',()=>{
+    navigator.clipboard&&navigator.clipboard.writeText(script);
+    const b=$('sg-copy'); b.classList.add('copied'); b.textContent='copied';
+    setTimeout(()=>{ b.classList.remove('copied'); b.textContent='copy'; },1500);
+  });
+}
+
 
 let balanceBeforeCheckout=null;   // snapshot taken when checkout opens
 function initPaddle(){
@@ -1030,6 +1150,26 @@ resetForm.addEventListener('submit', async (e)=>{
     showErr(resetErr,(ex&&ex.message)?ex.message.toLowerCase():'couldn’t update password.');
   }finally{ resetBtn.disabled=false; }
 });
+
+// ---- floating tool emojis (background) ----
+(function seedEmojis(){
+  const hosts=document.querySelectorAll('.emoji-bg');
+  if(!hosts.length) return;
+  const EMO=['🔧','🔨','🛠️','⚙️','🧰','🪛','⛏️','🔩','📐','📏','✂️','🪝','🧲','⚡','🔗','🖇️'];
+  const COUNT=16;
+  hosts.forEach(host=>{
+    for(let i=0;i<COUNT;i++){
+      const s=document.createElement('span');
+      s.textContent=EMO[Math.floor(Math.random()*EMO.length)];
+      s.style.left=(Math.random()*100)+'%';
+      const dur=18+Math.random()*22;
+      s.style.animationDuration=dur+'s';
+      s.style.animationDelay=(-Math.random()*dur)+'s';
+      s.style.fontSize=(24+Math.random()*26)+'px';
+      host.appendChild(s);
+    }
+  });
+})();
 
 renderTools();
 (async function init(){
