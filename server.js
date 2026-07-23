@@ -53,6 +53,19 @@ const PLANNER_MODEL = 'claude-haiku-4-5';
 const MAX_PLAN_TOPIC_CHARS = 600;
 const ALLOWED_PLAN_DAYS = [3, 7, 14, 30];
 
+// Landing Page Builder
+const LANDER_COST = 8;                     // credits per page (long output)
+const LANDER_MODEL = 'claude-sonnet-4-6';  // design quality is the product here
+const MAX_BRIEF_CHARS = 1200;
+const REFINE_COST = 4;                     // credits per edit pass
+const MAX_LANDER_HTML = 140000;            // guard: don't echo an enormous page back
+
+// Link tracker
+const LINK_COST = 1;                       // credits to create a link
+// Public base for short links. Set LINK_DOMAIN in Render to your separate
+// redirect domain (e.g. https://ecl.ink) so xposurelab.com is never the hop.
+const LINK_DOMAIN = String(process.env.LINK_DOMAIN || '').replace(/\/+$/, '');
+
 app.use(cors());
 
 // Paddle webhook MUST read the raw body to verify the signature,
@@ -180,6 +193,17 @@ async function getUser(req) {
   return data.user || null;
 }
 
+// ---- Pre-launch lock ----
+// While LAUNCHED is false, only admins can use the tools. Set LAUNCHED=true
+// (env var) on launch day to open it to everyone.
+const LAUNCHED = String(process.env.LAUNCHED || '').toLowerCase() === 'true';
+const ADMIN_IDS = String(process.env.ADMIN_USER_ID || '').split(',').map(s => s.trim()).filter(Boolean);
+function isAdmin(user) { return !!user && ADMIN_IDS.includes(user.id); }
+// Returns true if this user may use tools right now. Everyone during launch; only admins before.
+// Failsafe: if no admin is configured, the lock is OFF (otherwise a missing
+// env var would lock every tool for everyone, including you).
+function toolsUnlocked(user) { return LAUNCHED || ADMIN_IDS.length === 0 || isAdmin(user); }
+
 app.post('/api/download', async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ error: 'accounts not configured on the server yet.' });
@@ -187,6 +211,7 @@ app.post('/api/download', async (req, res) => {
     // 1) must be logged in
     const user = await getUser(req);
     if (!user) return res.status(401).json({ error: 'please log in.' });
+    if (!toolsUnlocked(user)) return res.status(403).json({ error: 'launching soon — tools are locked until launch day.' });
 
     // 2) valid, supported link (tiktok / youtube / instagram)
     const { url, audioOnly } = req.body || {};
@@ -319,6 +344,7 @@ app.post('/api/hooks', async (req, res) => {
     // 1) must be logged in
     const user = await getUser(req);
     if (!user) return res.status(401).json({ error: 'please log in.' });
+    if (!toolsUnlocked(user)) return res.status(403).json({ error: 'launching soon — tools are locked until launch day.' });
 
     // 2) validate input
     const examples = (req.body && req.body.examples ? String(req.body.examples) : '').trim();
@@ -401,6 +427,7 @@ app.post('/api/script', async (req, res) => {
     // 1) must be logged in
     const user = await getUser(req);
     if (!user) return res.status(401).json({ error: 'please log in.' });
+    if (!toolsUnlocked(user)) return res.status(403).json({ error: 'launching soon — tools are locked until launch day.' });
 
     // 2) validate input
     const topic = (req.body && req.body.topic ? String(req.body.topic) : '').trim();
@@ -509,6 +536,7 @@ app.post('/api/agent/send', async (req, res) => {
 
     const user = await getUser(req);
     if (!user) return res.status(401).json({ error: 'please log in.' });
+    if (!toolsUnlocked(user)) return res.status(403).json({ error: 'launching soon — tools are locked until launch day.' });
 
     const message = (req.body && req.body.message ? String(req.body.message) : '').trim();
     let chatId = req.body && req.body.chatId ? String(req.body.chatId) : '';
@@ -550,6 +578,7 @@ app.post('/api/agent/send', async (req, res) => {
           max_tokens: 1500,
           system: AGENT_SYSTEM,
           messages: apiMessages,
+          stream: true,
         }),
       });
     } catch (e) {
@@ -564,11 +593,47 @@ app.post('/api/agent/send', async (req, res) => {
       return res.status(502).json({ error: 'the agent failed. Try again — your credits were not charged.' });
     }
 
-    const data = await r.json();
-    const answer = (data.content || []).map((i) => (i.type === 'text' ? i.text : '')).join('').trim();
+    // ---- stream the reply to the browser as Server-Sent Events ----
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (res.flushHeaders) res.flushHeaders();
+    const send = (obj) => { try { res.write('data: ' + JSON.stringify(obj) + '\n\n'); } catch (_) {} };
+
+    let answer = '';
+    try {
+      const reader = r.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl;
+        while ((nl = buf.indexOf('\n')) >= 0) {
+          const line = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if (!line.startsWith('data:')) continue;
+          const payload = line.slice(5).trim();
+          if (!payload || payload === '[DONE]') continue;
+          let evt;
+          try { evt = JSON.parse(payload); } catch (_) { continue; }
+          if (evt.type === 'content_block_delta' && evt.delta && typeof evt.delta.text === 'string') {
+            answer += evt.delta.text;
+            send({ t: evt.delta.text });
+          }
+        }
+      }
+    } catch (e) {
+      console.error('agent stream error:', e);
+    }
+
+    answer = answer.trim();
     if (!answer) {
       await refund();
-      return res.status(502).json({ error: 'got an empty response. Try again — your credits were not charged.' });
+      send({ error: 'got an empty response. Try again — your credits were not charged.' });
+      return res.end();
     }
 
     // append both messages to history and save
@@ -594,7 +659,8 @@ app.post('/api/agent/send', async (req, res) => {
       if (prof) creditsLeft = prof.credits;
     } catch (_) {}
 
-    return res.json({ answer, chatId: savedId, creditsLeft });
+    send({ done: true, chatId: savedId, creditsLeft });
+    return res.end();
   } catch (e) {
     console.error('agent send error:', e);
     return res.status(500).json({ error: 'something went wrong. Try again.' });
@@ -663,6 +729,7 @@ app.post('/api/plan/generate', async (req, res) => {
 
     const user = await getUser(req);
     if (!user) return res.status(401).json({ error: 'please log in.' });
+    if (!toolsUnlocked(user)) return res.status(403).json({ error: 'launching soon — tools are locked until launch day.' });
 
     const topic = (req.body && req.body.topic ? String(req.body.topic) : '').trim();
     let days = parseInt(req.body && req.body.days, 10);
@@ -877,6 +944,451 @@ app.post('/api/plan/add-slot', async (req, res) => {
     return res.json({ ok: true });
   } catch (e) {
     console.error('plan add-slot error:', e);
+    return res.status(500).json({ error: 'something went wrong.' });
+  }
+});
+
+// ---- Landing Page Builder ----
+app.post('/api/lander', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured on the server yet.' });
+    if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'builder not configured yet.' });
+
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+    if (!toolsUnlocked(user)) return res.status(403).json({ error: 'launching soon — tools are locked until launch day.' });
+
+    const brief = (req.body && req.body.brief ? String(req.body.brief) : '').trim();
+    const style = (req.body && req.body.style ? String(req.body.style) : '').trim();
+    if (!brief) return res.status(400).json({ error: 'describe the page you want first.' });
+    if (brief.length > MAX_BRIEF_CHARS) return res.status(400).json({ error: 'keep the brief a bit shorter.' });
+
+    const { data: ok, error: cErr } = await supabase.rpc('spend_credits', { p_user: user.id, p_amount: LANDER_COST });
+    if (cErr) return res.status(500).json({ error: 'credit check failed — try again.' });
+    if (!ok) return res.status(402).json({ error: 'out of credits' });
+
+    const refund = async () => { try { await supabase.rpc('add_credits', { p_user: user.id, p_amount: LANDER_COST }); } catch (_) {} };
+
+    const styleLine = style ? `\nVISUAL STYLE: ${style}` : '';
+
+    const prompt = `You are an elite conversion-focused landing page designer and front-end developer. Build a complete, single-file landing page.
+
+BRIEF: ${brief}${styleLine}
+
+Requirements:
+- Output ONE complete HTML file: <!DOCTYPE html> through </html>, with all CSS in a <style> tag and any JS in a <script> tag. No external files.
+- Mobile-first and fully responsive.
+- Modern, premium design — real visual hierarchy, generous whitespace, considered typography. Use Google Fonts via <link>.
+- Structure: hero with a strong headline + subhead + primary CTA, a benefits/features section, social proof placeholder, FAQ, and a final CTA.
+- Write real, persuasive copy for the brief — never lorem ipsum.
+- Use CSS gradients, shadows and subtle transitions. No external images; use CSS shapes, gradients, or inline SVG instead.
+- Accessible: semantic HTML, sensible contrast, alt text on any SVG.
+- Do NOT include tracking scripts, external analytics, or third-party embeds.
+
+Respond with ONLY the raw HTML file. No preamble, no explanation, no markdown code fences.`;
+
+    let r;
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: LANDER_MODEL,
+          max_tokens: 8000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+    } catch (e) {
+      await refund();
+      return res.status(502).json({ error: 'couldn\u2019t reach the builder. Try again — your credits were not charged.' });
+    }
+
+    if (!r.ok) {
+      const errText = await r.text().catch(() => '');
+      console.error('Anthropic API error:', errText);
+      await refund();
+      return res.status(502).json({ error: 'generation failed. Try again — your credits were not charged.' });
+    }
+
+    const data = await r.json();
+    let html = (data.content || []).map((i) => (i.type === 'text' ? i.text : '')).join('').trim();
+    html = html.replace(/^```(?:html)?\s*/i, '').replace(/```\s*$/, '').trim();
+
+    if (!html || !/<html[\s>]/i.test(html)) {
+      await refund();
+      return res.status(502).json({ error: 'got a malformed page. Try again — your credits were not charged.' });
+    }
+
+    let creditsLeft = null;
+    try {
+      const { data: prof } = await supabase.from('profiles').select('credits').eq('id', user.id).single();
+      if (prof) creditsLeft = prof.credits;
+    } catch (_) {}
+
+    return res.json({ html, creditsLeft });
+  } catch (e) {
+    console.error('lander handler error:', e);
+    return res.status(500).json({ error: 'something went wrong. Try again.' });
+  }
+});
+
+// Edit an existing generated page with a natural-language instruction.
+app.post('/api/lander/refine', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured on the server yet.' });
+    if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'builder not configured yet.' });
+
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+    if (!toolsUnlocked(user)) return res.status(403).json({ error: 'launching soon — tools are locked until launch day.' });
+
+    const html = (req.body && req.body.html ? String(req.body.html) : '');
+    const instruction = (req.body && req.body.instruction ? String(req.body.instruction) : '').trim();
+    const target = (req.body && req.body.target ? String(req.body.target) : '').trim();
+    if (!html || !/<html[\s>]/i.test(html)) return res.status(400).json({ error: 'no page to edit.' });
+    if (html.length > MAX_LANDER_HTML) return res.status(400).json({ error: 'that page is too large to edit.' });
+    if (!instruction) return res.status(400).json({ error: 'describe the change first.' });
+    if (instruction.length > 600) return res.status(400).json({ error: 'keep the change shorter.' });
+
+    const { data: ok, error: cErr } = await supabase.rpc('spend_credits', { p_user: user.id, p_amount: REFINE_COST });
+    if (cErr) return res.status(500).json({ error: 'credit check failed — try again.' });
+    if (!ok) return res.status(402).json({ error: 'out of credits' });
+
+    const refund = async () => { try { await supabase.rpc('add_credits', { p_user: user.id, p_amount: REFINE_COST }); } catch (_) {} };
+
+    const targetLine = target
+      ? `\nThe user selected this specific element to change:\n${target}\nApply the change to that element (and only what's needed to make it look right).`
+      : '\nNo specific element was selected — apply the change wherever it makes sense.';
+
+    const prompt = `You are editing an existing single-file HTML landing page.
+
+REQUESTED CHANGE: ${instruction}${targetLine}
+
+Rules:
+- Return the COMPLETE updated HTML file, from <!DOCTYPE html> to </html>.
+- Change only what the request asks for. Keep everything else byte-for-byte the same wherever possible.
+- Keep it a single file: all CSS in <style>, all JS in <script>. No external files or images.
+- Do not add tracking scripts or third-party embeds.
+
+Here is the current page:
+
+${html}
+
+Respond with ONLY the raw updated HTML file. No preamble, no explanation, no markdown code fences.`;
+
+    let r;
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: LANDER_MODEL,
+          max_tokens: 16000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+    } catch (e) {
+      await refund();
+      return res.status(502).json({ error: 'couldn\u2019t reach the builder. Try again — your credits were not charged.' });
+    }
+
+    if (!r.ok) {
+      const errText = await r.text().catch(() => '');
+      console.error('Anthropic API error:', errText);
+      await refund();
+      return res.status(502).json({ error: 'edit failed. Try again — your credits were not charged.' });
+    }
+
+    const data = await r.json();
+    let out = (data.content || []).map((i) => (i.type === 'text' ? i.text : '')).join('').trim();
+    out = out.replace(/^```(?:html)?\s*/i, '').replace(/```\s*$/, '').trim();
+
+    if (!out || !/<html[\s>]/i.test(out)) {
+      await refund();
+      return res.status(502).json({ error: 'got a malformed page. Try again — your credits were not charged.' });
+    }
+
+    let creditsLeft = null;
+    try {
+      const { data: prof } = await supabase.from('profiles').select('credits').eq('id', user.id).single();
+      if (prof) creditsLeft = prof.credits;
+    } catch (_) {}
+
+    return res.json({ html: out, creditsLeft });
+  } catch (e) {
+    console.error('lander refine error:', e);
+    return res.status(500).json({ error: 'something went wrong. Try again.' });
+  }
+});
+
+// ================= LINK TRACKER =================
+const SLUG_ALPHABET = 'abcdefghijkmnpqrstuvwxyz23456789';
+function makeSlug(n = 7) {
+  let out = '';
+  for (let i = 0; i < n; i++) out += SLUG_ALPHABET[Math.floor(Math.random() * SLUG_ALPHABET.length)];
+  return out;
+}
+function shortBase(req) {
+  if (LINK_DOMAIN) return LINK_DOMAIN;
+  const proto = (req.get('x-forwarded-proto') || 'https').split(',')[0];
+  return proto + '://' + req.get('host');
+}
+// Parse the visitor's user-agent into the fields we chart on.
+function readUA(ua) {
+  ua = String(ua || '');
+  const os = /iphone|ipad|ipod/i.test(ua) ? 'ios' : /android/i.test(ua) ? 'android' : 'other';
+  const device = /ipad|tablet/i.test(ua) ? 'tablet' : /mobile|iphone|android/i.test(ua) ? 'mobile' : 'desktop';
+  let app = 'none';
+  if (/bytedance|musical_ly|tiktok|trill/i.test(ua)) app = 'tiktok';
+  else if (/instagram/i.test(ua)) app = 'instagram';
+  else if (/fban|fbav|fb_iab/i.test(ua)) app = 'facebook';
+  else if (/snapchat/i.test(ua)) app = 'snapchat';
+  else if (/line\/|micromessenger|twitter|pinterest/i.test(ua)) app = 'other';
+  return { os, device, app, inApp: app !== 'none' };
+}
+function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+// Interstitial used when we need the OS to hand off to the real browser.
+function escapePage(dest, os) {
+  const safe = esc(dest);
+  let auto = '';
+  if (os === 'android') {
+    const noScheme = dest.replace(/^https?:\/\//i, '');
+    auto = `location.replace("intent://${noScheme}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(dest)};end");`;
+  } else if (os === 'ios') {
+    auto = `location.replace("x-safari-https://${dest.replace(/^https?:\/\//i, '')}");`;
+  }
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Opening…</title>
+<style>
+:root{color-scheme:dark}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:#0B0708;color:#F3EEEC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:24px;text-align:center}
+.box{max-width:340px}
+.sp{width:34px;height:34px;margin:0 auto 22px;border:3px solid rgba(229,57,44,.25);border-top-color:#E5392C;
+  border-radius:50%;animation:s .8s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+h1{font-size:19px;margin:0 0 8px}
+p{color:#8E8280;font-size:14px;line-height:1.5;margin:0 0 22px}
+a.btn{display:block;background:linear-gradient(180deg,#FF574C,#E5392C);color:#fff;text-decoration:none;
+  font-weight:700;padding:15px 20px;border-radius:12px;font-size:15px}
+small{display:block;margin-top:18px;color:#5a4a49;font-size:12px;line-height:1.5}
+</style></head><body><div class="box">
+<div class="sp"></div>
+<h1>Opening in your browser…</h1>
+<p>If nothing happens, tap the button below.</p>
+<a class="btn" href="${safe}" target="_blank" rel="noopener">Continue &rarr;</a>
+<small>Tip: you can also tap the &#8943; menu and choose &ldquo;Open in browser&rdquo;.</small>
+</div>
+<script>
+try{ ${auto} }catch(e){}
+setTimeout(function(){ location.href=${JSON.stringify(dest)}; }, 2500);
+</script>
+</body></html>`;
+}
+
+// ---- Public redirect. No auth: this is the hop itself. ----
+app.get('/r/:slug', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).send('not configured');
+    const slug = String(req.params.slug || '').toLowerCase();
+    const { data: link } = await supabase
+      .from('links').select('*').eq('slug', slug).single();
+    if (!link || !link.active) return res.status(404).send('Link not found.');
+
+    const ua = readUA(req.get('user-agent'));
+    const country = req.get('cf-ipcountry') || req.get('x-vercel-ip-country') || null;
+    const willEscape = !!link.escape_app && ua.inApp && (ua.os === 'ios' || ua.os === 'android');
+
+    // fire-and-forget: never make the visitor wait on analytics
+    supabase.from('clicks').insert({
+      link_id: link.id,
+      user_id: link.user_id,
+      country,
+      device: ua.device,
+      os: ua.os,
+      source_app: ua.app,
+      escaped: willEscape,
+      referrer: (req.get('referer') || '').slice(0, 300) || null,
+    }).then(() => {}, (e) => console.error('click log failed:', e));
+
+    res.set('Cache-Control', 'no-store');
+    if (willEscape) return res.status(200).send(escapePage(link.destination, ua.os));
+    return res.redirect(302, link.destination);
+  } catch (e) {
+    console.error('redirect error:', e);
+    return res.status(500).send('Something went wrong.');
+  }
+});
+
+// ---- Manage links (auth) ----
+app.post('/api/links/create', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured.' });
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+    if (!toolsUnlocked(user)) return res.status(403).json({ error: 'launching soon — tools are locked until launch day.' });
+
+    let destination = (req.body && req.body.destination ? String(req.body.destination) : '').trim();
+    const label = (req.body && req.body.label ? String(req.body.label) : '').trim().slice(0, 80);
+    const escapeApp = req.body && req.body.escapeApp === false ? false : true;
+    if (!destination) return res.status(400).json({ error: 'paste a destination link first.' });
+    if (!/^https?:\/\//i.test(destination)) destination = 'https://' + destination;
+    try { new URL(destination); } catch (_) { return res.status(400).json({ error: 'that destination doesn\u2019t look like a valid URL.' }); }
+    if (destination.length > 2000) return res.status(400).json({ error: 'that URL is too long.' });
+
+    const { data: ok, error: cErr } = await supabase.rpc('spend_credits', { p_user: user.id, p_amount: LINK_COST });
+    if (cErr) return res.status(500).json({ error: 'credit check failed — try again.' });
+    if (!ok) return res.status(402).json({ error: 'out of credits' });
+
+    let created = null, lastErr = null;
+    for (let i = 0; i < 5 && !created; i++) {
+      const slug = makeSlug();
+      const { data, error } = await supabase.from('links')
+        .insert({ user_id: user.id, slug, destination, label: label || null, escape_app: escapeApp })
+        .select().single();
+      if (!error) { created = data; break; }
+      lastErr = error;                                  // slug collision → retry
+    }
+    if (!created) {
+      try { await supabase.rpc('add_credits', { p_user: user.id, p_amount: LINK_COST }); } catch (_) {}
+      console.error('link insert failed:', lastErr);
+      return res.status(500).json({ error: 'couldn\u2019t create that link. Try again — your credits were not charged.' });
+    }
+
+    let creditsLeft = null;
+    try {
+      const { data: prof } = await supabase.from('profiles').select('credits').eq('id', user.id).single();
+      if (prof) creditsLeft = prof.credits;
+    } catch (_) {}
+
+    return res.json({ link: created, shortUrl: shortBase(req) + '/r/' + created.slug, creditsLeft });
+  } catch (e) {
+    console.error('link create error:', e);
+    return res.status(500).json({ error: 'something went wrong.' });
+  }
+});
+
+app.get('/api/links/list', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured.' });
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+    const { data: links, error } = await supabase
+      .from('links').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    if (error) return res.status(500).json({ error: 'couldn\u2019t load your links.' });
+
+    // click totals per link
+    const { data: rows } = await supabase.from('clicks').select('link_id').eq('user_id', user.id);
+    const counts = {};
+    (rows || []).forEach((r) => { counts[r.link_id] = (counts[r.link_id] || 0) + 1; });
+
+    return res.json({
+      base: shortBase(req),
+      links: (links || []).map((l) => ({ ...l, clicks: counts[l.id] || 0 })),
+    });
+  } catch (e) {
+    console.error('link list error:', e);
+    return res.status(500).json({ error: 'something went wrong.' });
+  }
+});
+
+app.post('/api/links/update', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured.' });
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+    const id = req.body && req.body.id ? String(req.body.id) : '';
+    if (!id) return res.status(400).json({ error: 'bad request.' });
+    const patch = {};
+    if (typeof req.body.escapeApp === 'boolean') patch.escape_app = req.body.escapeApp;
+    if (typeof req.body.active === 'boolean') patch.active = req.body.active;
+    if (typeof req.body.label === 'string') patch.label = req.body.label.trim().slice(0, 80) || null;
+    if (!Object.keys(patch).length) return res.status(400).json({ error: 'nothing to update.' });
+    const { error } = await supabase.from('links').update(patch).eq('id', id).eq('user_id', user.id);
+    if (error) return res.status(500).json({ error: 'couldn\u2019t update.' });
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ error: 'something went wrong.' });
+  }
+});
+
+app.post('/api/links/delete', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured.' });
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+    const id = req.body && req.body.id ? String(req.body.id) : '';
+    if (!id) return res.status(400).json({ error: 'bad request.' });
+    const { error } = await supabase.from('links').delete().eq('id', id).eq('user_id', user.id);
+    if (error) return res.status(500).json({ error: 'couldn\u2019t delete.' });
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ error: 'something went wrong.' });
+  }
+});
+
+// ---- Analytics ----
+app.get('/api/links/stats', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured.' });
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+
+    const days = Math.min(365, Math.max(1, parseInt(req.query.days, 10) || 30));
+    const linkId = req.query.linkId ? String(req.query.linkId) : '';
+    const since = new Date(Date.now() - days * 86400000).toISOString();
+
+    let q = supabase.from('clicks')
+      .select('created_at, country, device, os, source_app, escaped, link_id')
+      .eq('user_id', user.id).gte('created_at', since)
+      .order('created_at', { ascending: false }).limit(20000);
+    if (linkId) q = q.eq('link_id', linkId);
+    const { data: rows, error } = await q;
+    if (error) return res.status(500).json({ error: 'couldn\u2019t load stats.' });
+
+    const clicks = rows || [];
+    const tally = (key) => {
+      const m = {};
+      clicks.forEach((c) => { const k = c[key] || 'unknown'; m[k] = (m[k] || 0) + 1; });
+      return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ k, v }));
+    };
+    // clicks per day, oldest → newest
+    const byDay = {};
+    for (let i = days - 1; i >= 0; i--) byDay[new Date(Date.now() - i * 86400000).toISOString().slice(0, 10)] = 0;
+    clicks.forEach((c) => { const d = String(c.created_at).slice(0, 10); if (d in byDay) byDay[d]++; });
+
+    return res.json({
+      total: clicks.length,
+      escaped: clicks.filter((c) => c.escaped).length,
+      byDay: Object.entries(byDay).map(([k, v]) => ({ k, v })),
+      byApp: tally('source_app'),
+      byOs: tally('os'),
+      byDevice: tally('device'),
+      byCountry: tally('country').slice(0, 12),
+    });
+  } catch (e) {
+    console.error('stats error:', e);
+    return res.status(500).json({ error: 'something went wrong.' });
+  }
+});
+
+// Report whether the current user can use the tools (admin before launch, everyone after).
+app.get('/api/me', async (req, res) => {
+  try {
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+    return res.json({ unlocked: toolsUnlocked(user), admin: isAdmin(user), launched: LAUNCHED });
+  } catch (e) {
     return res.status(500).json({ error: 'something went wrong.' });
   }
 });
