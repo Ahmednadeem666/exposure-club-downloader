@@ -46,31 +46,92 @@
   .ticker .track b{color:var(--red);font-weight:400}
   @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
-  .wrap{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:22px 22px 60px}
+  .wrap{position:relative;z-index:1}
 
-  nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:44px}
-  .brand{display:flex;align-items:center;gap:11px}
-  
-  .brand .name{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
-  .nav-right{display:flex;align-items:center;gap:10px}
-  .credits{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);border:1px solid var(--line);
-    border-radius:100px;padding:6px 12px;display:flex;align-items:center;gap:6px}
-  .credits b{color:var(--red);font-weight:700}
-  .credits.low b{color:var(--red-bright)}
-  .credits .c-label{color:var(--muted);font-weight:400}
-  .userchip{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);border:1px solid var(--line);border-radius:100px;padding:6px 12px}
-  .userchip b{color:var(--red);font-weight:700}
-  .buycred{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;
+  /* ===== AffRev-style app shell: sidebar + main ===== */
+  .shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+  .sidebar{position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--card);border-right:1px solid var(--line);
+    display:flex;flex-direction:column;padding:18px 14px;gap:6px}
+  .sb-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 16px;border-bottom:1px solid var(--line-soft);margin-bottom:10px}
+  .sb-brand .name{font-family:'Anton',sans-serif;font-size:22px;letter-spacing:.01em;color:var(--text)}
+  .sb-brand .name .r{color:var(--red)}
+  .sb-group{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);padding:12px 10px 6px}
+  .sb-link{display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:10px;cursor:pointer;
+    color:var(--text);font-family:'Archivo',sans-serif;font-weight:600;font-size:14px;transition:background .14s,color .14s;border:none;background:none;width:100%;text-align:left}
+  .sb-link:hover{background:rgba(229,57,44,.07)}
+  .sb-link.active{background:rgba(229,57,44,.12);color:#fff}
+  .sb-link .sb-ic{width:19px;height:19px;flex:none;color:var(--red);display:flex;align-items:center;justify-content:center}
+  .sb-link .sb-ic svg{width:19px;height:19px}
+  .sb-link .sb-soon{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+  .sb-spacer{flex:1}
+  .sb-credits{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;background:var(--bg-soft)}
+  .sb-credits .sb-cred-top{display:flex;align-items:center;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text)}
+  .sb-credits .sb-cred-top b{color:var(--red);font-weight:700}
+  .sb-credits .sb-manage{color:var(--red-bright);cursor:pointer;font-weight:600}
+  .sb-cred-bar{height:5px;background:var(--line);border-radius:100px;margin-top:9px;overflow:hidden}
+  .sb-cred-fill{height:100%;background:linear-gradient(90deg,var(--red-bright),var(--red));border-radius:100px;width:30%;transition:width .3s}
+  .sb-user{display:flex;align-items:center;gap:10px;padding:10px 8px 2px;margin-top:10px;border-top:1px solid var(--line-soft)}
+  .sb-user .sb-ava{width:30px;height:30px;border-radius:50%;background:linear-gradient(180deg,var(--red-bright),var(--red));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;flex:none}
+  .sb-user .sb-uname{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sb-user .sb-logout{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;
+    font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.06em}
+  .sb-user .sb-logout:hover{color:var(--red-bright)}
+
+  .main{min-width:0;display:flex;flex-direction:column}
+  .topbar2{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:16px 30px;border-bottom:1px solid var(--line-soft)}
+  .tb-credits{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);border:1px solid var(--line);
+    border-radius:100px;padding:6px 12px;display:flex;align-items:center;gap:6px;cursor:pointer}
+  .tb-credits b{color:var(--red);font-weight:700}
+  .tb-credits.low b{color:var(--red-bright)}
+  .tb-buy{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;
     background:linear-gradient(180deg,var(--red-bright),var(--red));color:#fff;border:none;border-radius:100px;
     padding:8px 16px;transition:filter .15s;white-space:nowrap}
-  .buycred:hover{filter:brightness(1.08)}
-  .logout{background:none;border:1px solid var(--line-soft);color:var(--muted);cursor:pointer;
-    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
-    border-radius:100px;padding:7px 12px;transition:color .15s,border-color .15s}
-  .logout:hover{color:var(--text);border-color:var(--line)}
+  .tb-buy:hover{filter:brightness(1.08)}
+  .content{padding:30px;max-width:1100px;width:100%}
+
+  /* mobile: collapse sidebar to a top bar */
+  @media (max-width:760px){
+    .shell{grid-template-columns:1fr}
+    .sidebar{position:fixed;left:0;top:0;bottom:0;width:248px;z-index:120;transform:translateX(-100%);transition:transform .25s}
+    .sidebar.open{transform:translateX(0)}
+    .sb-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:110;display:none}
+    .sb-backdrop.show{display:block}
+    .content{padding:18px}
+    .topbar2{padding:12px 16px;justify-content:space-between}
+    .mobile-menu{display:flex}
+  }
+  .mobile-menu{display:none;background:none;border:1px solid var(--line);color:var(--text);border-radius:9px;
+    width:38px;height:38px;align-items:center;justify-content:center;cursor:pointer;font-size:18px}
 
   .view{display:none}
   .view.active{display:block}
+
+  /* legacy nav (hidden — replaced by shell) */
+  nav#topbar{display:none !important}
+
+  /* logout confirmation modal */
+  /* pre-launch lock banner */
+  .lock-banner{background:rgba(229,57,44,.10);border:1px solid var(--red);border-radius:12px;
+    padding:14px 18px;margin-bottom:24px;font-size:14px;line-height:1.5;color:var(--text)}
+  .lock-banner b{color:var(--red-bright)}
+
+  .logout-modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);
+    display:flex;align-items:center;justify-content:center;padding:24px}
+  .logout-modal[hidden]{display:none}
+  .logout-box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:26px 24px;max-width:360px;width:100%;
+    animation:hookIn .25s ease}
+  .logout-box h3{font-family:'Anton',sans-serif;font-size:24px;color:var(--text);margin-bottom:8px;letter-spacing:.01em}
+  .logout-box p{color:var(--muted);font-size:14.5px;line-height:1.5;margin-bottom:22px}
+  .logout-actions{display:flex;gap:10px;justify-content:flex-end}
+  .lo-cancel{background:none;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 18px;
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:border-color .15s}
+  .lo-cancel:hover{border-color:var(--muted)}
+  .lo-confirm{background:linear-gradient(180deg,var(--red-bright),var(--red));border:none;color:#fff;border-radius:10px;
+    padding:10px 18px;font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:filter .15s}
+  .lo-confirm:hover{filter:brightness(1.08)}
 
   /* dashboard */
   .dash-hero{text-align:center;margin:6px 0 40px}
@@ -236,6 +297,9 @@
   .ag-msg.user{align-self:flex-end;background:linear-gradient(180deg,var(--red-bright),var(--red));color:#fff;border-bottom-right-radius:4px}
   .ag-msg.bot{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px}
   .ag-msg.bot strong{color:var(--red-bright);font-weight:700}
+  .ag-cursor{display:inline-block;width:7px;height:1.05em;vertical-align:-2px;margin-left:2px;
+    background:var(--red-bright);border-radius:1px;animation:agBlink 1s steps(2,start) infinite}
+  @keyframes agBlink{50%{opacity:0}}
   .ag-typing{align-self:flex-start;display:flex;align-items:center;gap:8px;color:var(--muted);
     font-family:'JetBrains Mono',monospace;font-size:13px;padding:4px 2px}
   /* Content Planner */
@@ -299,6 +363,129 @@
   .hg-field{transition:border-color .18s, box-shadow .18s}
   .hg-field:focus-within{border-color:var(--red);box-shadow:0 0 0 3px rgba(229,57,44,.10)}
 
+  /* ===== Landing Page Builder ===== */
+  #lb-brief{width:100%;background:transparent;border:none;outline:none;resize:vertical;color:var(--text);
+    font-family:'Archivo',sans-serif;font-size:15px;line-height:1.65;min-height:110px}
+  #lb-brief::placeholder{color:var(--muted);opacity:.5;font-family:'JetBrains Mono',monospace;font-size:13.5px}
+  .lb-styles{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .lb-style{background:var(--bg-soft);border:1px solid var(--line);color:var(--muted);border-radius:100px;
+    padding:8px 16px;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s}
+  .lb-style:hover{border-color:var(--red)}
+  .lb-style.active{background:rgba(229,57,44,.10);border-color:var(--red);color:var(--text)}
+  .lb-build{display:none;margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+  .lb-build.show{display:block}
+  .lb-steps{display:flex;flex-direction:column;gap:2px}
+  .lb-step{display:flex;align-items:center;gap:12px;padding:9px 0;font-family:'JetBrains Mono',monospace;font-size:13.5px;
+    color:var(--muted);opacity:0;transform:translateY(4px);animation:lbIn .3s ease forwards}
+  @keyframes lbIn{to{opacity:1;transform:none}}
+  .lb-ic{width:18px;height:18px;flex:none;display:flex;align-items:center;justify-content:center}
+  .lb-step.pending .lb-ic::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--line);display:block}
+  .lb-step.active{color:var(--text)}
+  .lb-step.active .lb-ic{border:2px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+  .lb-step.done{color:var(--muted)}
+  .lb-step.done .lb-ic::before{content:"\2713";color:var(--red-bright);font-size:13px;font-weight:700}
+  .lb-step.active .lb-label{background:linear-gradient(90deg,var(--text) 25%,var(--red-bright) 50%,var(--text) 75%);
+    background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    animation:lbShimmer 1.6s linear infinite}
+  @keyframes lbShimmer{to{background-position:-200% 0}}
+  .lb-bar{height:3px;background:var(--line);border-radius:100px;overflow:hidden;margin-top:16px}
+  .lb-bar-fill{height:100%;width:0%;border-radius:100px;
+    background:linear-gradient(90deg,var(--red),var(--red-bright));transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .lb-result{display:none;margin-top:26px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+    background:var(--card);opacity:0;transform:translateY(10px)}
+  .lb-result.show{display:block;animation:lbIn .45s ease forwards}
+  .lb-toolbar{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--bg-soft);flex-wrap:wrap}
+  .lb-dots{display:flex;gap:6px;flex:none}
+  .lb-dots i{width:10px;height:10px;border-radius:50%;background:var(--line);display:block}
+  .lb-dots i:first-child{background:var(--red)}
+  .lb-url{flex:1;min-width:80px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);
+    background:var(--bg);border-radius:100px;padding:5px 12px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lb-actions{display:flex;gap:7px;flex:none}
+  .lb-btn{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 13px;
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;cursor:pointer;transition:all .15s;white-space:nowrap}
+  .lb-btn:hover{border-color:var(--red);background:rgba(229,57,44,.06)}
+  .lb-btn.primary{background:linear-gradient(180deg,var(--red-bright),var(--red));border-color:transparent;color:#fff}
+  .lb-btn.primary:hover{filter:brightness(1.08)}
+  .lb-btn.copied{border-color:var(--red-bright);color:var(--red-bright)}
+  .lb-frame{width:100%;height:560px;border:none;background:#fff;display:block}
+  @media(max-width:640px){ .lb-frame{height:420px} .lb-url{display:none} }
+  .lb-refine{border-top:1px solid var(--line);padding:14px;background:var(--bg-soft)}
+  .lb-target{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5}
+  .lb-target b{color:var(--red-bright);font-weight:500}
+  .lb-refine-row{display:flex;gap:8px}
+  #lb-change{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--text);
+    font-family:'JetBrains Mono',monospace;font-size:13px;padding:11px 13px;outline:none;transition:border-color .15s}
+  #lb-change:focus{border-color:var(--red)}
+  #lb-change::placeholder{color:var(--muted);opacity:.55}
+  .lb-btn#lb-select.on{background:rgba(229,57,44,.14);border-color:var(--red);color:var(--red-bright)}
+  .lb-frame.selecting{cursor:crosshair}
+  .lb-deploy-help{display:none;margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+  .lb-deploy-help.show{display:block;animation:lbIn .3s ease forwards}
+  .lb-deploy-help b{color:var(--red-bright);display:block;margin-bottom:10px;font-size:14.5px}
+  .lb-deploy-help ol{margin:0 0 12px 18px;color:var(--text);font-size:14px;line-height:1.7}
+  .lb-note{color:var(--muted);font-size:13px;line-height:1.5}
+
+  /* ===== Link Tracker ===== */
+  #lk-dest,#lk-label{width:100%;background:transparent;border:none;outline:none;color:var(--text);
+    font-family:'JetBrains Mono',monospace;font-size:14px}
+  #lk-dest::placeholder,#lk-label::placeholder{color:var(--muted);opacity:.55}
+  .lk-row2{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;flex-wrap:wrap}
+  .lk-toggle{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px;color:var(--text);user-select:none}
+  .lk-toggle input{display:none}
+  .lk-toggle span{width:40px;height:22px;border-radius:100px;background:var(--line);position:relative;transition:background .18s;flex:none}
+  .lk-toggle span::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;
+    background:var(--muted);transition:transform .18s,background .18s}
+  .lk-toggle input:checked + span{background:rgba(229,57,44,.35)}
+  .lk-toggle input:checked + span::after{transform:translateX(18px);background:var(--red-bright)}
+  .lk-section-title{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);margin:34px 0 14px}
+  .lk-list{display:flex;flex-direction:column;gap:10px}
+  .lk-item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:15px 17px;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .lk-main{flex:1;min-width:190px}
+  .lk-short{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--red-bright);cursor:pointer;word-break:break-all}
+  .lk-short:hover{text-decoration:underline}
+  .lk-dest{font-size:12.5px;color:var(--muted);margin-top:4px;word-break:break-all;
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .lk-lab{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);
+    border:1px solid var(--line);border-radius:5px;padding:1px 6px;margin-top:6px}
+  .lk-clicks{text-align:center;flex:none;min-width:62px}
+  .lk-clicks b{display:block;font-family:'Anton',sans-serif;font-size:23px;color:var(--text);line-height:1}
+  .lk-clicks span{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .lk-acts{display:flex;align-items:center;gap:9px;flex:none}
+  .lk-mini{background:none;border:1px solid var(--line);color:var(--muted);border-radius:7px;padding:6px 10px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
+  .lk-mini:hover{border-color:var(--red);color:var(--red-bright)}
+  .lk-mini.on{border-color:var(--red);color:var(--red-bright);background:rgba(229,57,44,.08)}
+  .lk-filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .lk-select{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:9px;
+    padding:9px 13px;font-family:'Archivo',sans-serif;font-size:13.5px;cursor:pointer;outline:none}
+  .lk-select:focus{border-color:var(--red)}
+  .lk-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+  .lk-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:17px}
+  .lk-card b{display:block;font-family:'Anton',sans-serif;font-size:30px;color:var(--text);line-height:1;margin-bottom:6px}
+  .lk-card span{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .lk-panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:12px}
+  .lk-panel h4{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:14px;font-weight:400}
+  .lk-days{display:flex;align-items:flex-end;gap:3px;height:110px}
+  .lk-day{flex:1;background:linear-gradient(180deg,var(--red-bright),var(--red));border-radius:3px 3px 0 0;
+    min-height:2px;position:relative;transition:filter .15s}
+  .lk-day:hover{filter:brightness(1.3)}
+  .lk-day .lk-tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+    background:var(--bg-soft);border:1px solid var(--line);border-radius:6px;padding:4px 8px;white-space:nowrap;
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);z-index:3}
+  .lk-day:hover .lk-tip{display:block}
+  .lk-bars{display:flex;flex-direction:column;gap:9px}
+  .lk-bar-row{display:flex;align-items:center;gap:11px;font-size:13px}
+  .lk-bar-k{width:88px;flex:none;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lk-bar-t{flex:1;height:8px;background:var(--line);border-radius:100px;overflow:hidden}
+  .lk-bar-f{height:100%;background:linear-gradient(90deg,var(--red),var(--red-bright));border-radius:100px}
+  .lk-bar-v{width:40px;flex:none;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text)}
+  .lk-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:640px){ .lk-cards{grid-template-columns:1fr} .lk-grid2{grid-template-columns:1fr} }
+
   .stage{margin-top:26px}
   .card{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
     opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .35s,transform .35s}
@@ -340,7 +527,11 @@
   .lp-glow{position:absolute;top:-20%;left:50%;transform:translateX(-50%);width:900px;height:600px;
     background:radial-gradient(circle,rgba(229,57,44,.18),transparent 60%);pointer-events:none;z-index:0}
   .lp-inner{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:0 24px}
-  .lp-nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  .lp-nav{display:flex;align-items:center;justify-content:space-between;gap:24px;
+    position:sticky;top:16px;z-index:20;margin:16px auto 0;max-width:760px;
+    padding:10px 12px 10px 20px;border-radius:100px;
+    background:rgba(20,12,14,.55);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);
+    border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 32px rgba(0,0,0,.4)}
   .lp-nav .brand{display:flex;align-items:center;gap:10px}
   .lp-nav .name{font-family:'Archivo',sans-serif;font-weight:800;font-size:16px;letter-spacing:.02em}
   .lp-nav-btns{display:flex;gap:10px;align-items:center}
@@ -372,6 +563,30 @@
     padding:16px 30px;font-family:'Archivo',sans-serif;font-weight:600;font-size:16px;cursor:pointer;transition:border-color .15s}
   .lp-ghost:hover{border-color:var(--red)}
   .lp-teaser{margin-top:20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted)}
+
+  /* AffRev-style pill eyebrow */
+  .lp-pill{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:12px;
+    letter-spacing:.04em;color:var(--red-bright);background:rgba(229,57,44,.08);border:1px solid var(--line);
+    border-radius:100px;padding:7px 16px;margin-bottom:24px}
+
+  /* countdown */
+  .lp-countdown-wrap{margin-top:40px;display:flex;flex-direction:column;align-items:center;gap:12px}
+  .lp-cd-label{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--red-bright)}
+  .lp-countdown{display:flex;align-items:center;gap:10px}
+  .lp-cd-unit{display:flex;flex-direction:column;align-items:center;min-width:64px;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 8px}
+  .lp-cd-num{font-family:'Anton',sans-serif;font-size:34px;line-height:1;color:var(--text)}
+  .lp-cd-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+  .lp-cd-sep{font-family:'Anton',sans-serif;font-size:28px;color:var(--red);opacity:.5}
+  @media (max-width:560px){ .lp-cd-unit{min-width:52px;padding:9px 5px} .lp-cd-num{font-size:26px} .lp-countdown{gap:5px} }
+
+  /* product screenshot frame */
+  .lp-shot{margin:56px auto 0;max-width:1000px;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    background:var(--card);box-shadow:0 30px 80px rgba(0,0,0,.5),0 0 60px rgba(229,57,44,.06);position:relative}
+  .lp-shot img{display:block;width:100%;height:auto}
+  .lp-shot-ph{display:none;padding:80px 20px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted)}
+  .lp-shot.lp-shot-empty img{display:none}
+  .lp-shot.lp-shot-empty .lp-shot-ph{display:block}
   .lp-teaser b{color:var(--red-bright)}
 
   .lp-section{padding:56px 0;border-top:1px solid var(--line-soft)}
@@ -397,6 +612,33 @@
   .lp-badge.soon{background:rgba(255,255,255,.06);color:var(--muted)}
   .lp-final{text-align:center;padding:72px 0 40px}
   .lp-final h2{margin-bottom:20px}
+
+  /* testimonials */
+  .lp-reviews{text-align:center}
+  .lp-stars{color:var(--red);font-size:20px;letter-spacing:4px;margin-bottom:14px}
+  .lp-review-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:36px}
+  .lp-review{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;text-align:left}
+  .lp-review-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .lp-review-ava{width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,var(--red-bright),var(--red));color:#fff;font-weight:800;font-size:15px}
+  .lp-review-head b{display:block;font-size:14.5px;color:var(--text)}
+  .lp-review-head span{font-size:12.5px;color:var(--muted)}
+  .lp-review p{font-size:14px;line-height:1.6;color:var(--text)}
+  @media (max-width:760px){ .lp-review-grid{grid-template-columns:1fr} }
+
+  /* FAQ */
+  .lp-faq{max-width:760px;margin:32px auto 0;display:flex;flex-direction:column;gap:12px}
+  .lp-faq-item{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .lp-faq-q{width:100%;text-align:left;background:none;border:none;color:var(--text);cursor:pointer;
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;padding:20px 22px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;transition:color .15s}
+  .lp-faq-q:hover{color:var(--red-bright)}
+  .lp-faq-ic{flex:none;color:var(--red);font-size:14px;transition:transform .2s}
+  .lp-faq-item.open .lp-faq-ic{transform:rotate(180deg)}
+  .lp-faq-a{max-height:0;overflow:hidden;transition:max-height .28s ease,padding .28s ease;padding:0 22px;
+    color:var(--muted);font-size:14.5px;line-height:1.65}
+  .lp-faq-item.open .lp-faq-a{max-height:300px;padding:0 22px 20px}
+  .lp-faq-a a{color:var(--red-bright);text-decoration:underline}
   .lp-foot{text-align:center;padding:30px 0 50px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px;border-top:1px solid var(--line-soft)}
   @media(max-width:720px){
     .lp-feats{grid-template-columns:1fr}
@@ -500,14 +742,31 @@
       </nav>
 
       <header class="lp-hero">
-        <span class="lp-eyebrow">&#9889; AI Tools for TikTok Organic</span>
-        <h1>Create content that<br><span class="r">actually converts.</span></h1>
-        <p>Exposure Club Marketing Tools is an AI-powered suite for TikTok organic marketers. Generate scroll-stopping hooks, write UGC scripts that convert, and plan your content &#8212; all from one login, one credit wallet. Plus a free video downloader on the side.</p>
+        <span class="lp-pill">&#43; AI Powered Marketing</span>
+        <h1>Your content engine,<br><span class="r">on autopilot.</span></h1>
+        <p>An AI marketing platform for TikTok organic that actually helps you scale &#8212; hooks, UGC scripts, a chat strategist, and content planning, all in one place.</p>
         <div class="lp-hero-btns">
-          <button class="lp-big" id="lp-signup-hero">Get Started Free</button>
-          <button class="lp-ghost" id="lp-login-hero">I have an account</button>
+          <button class="lp-big" id="lp-signup-hero">Sign Up &#8594;</button>
+          <button class="lp-ghost" id="lp-login-hero">Dashboard &#8594;</button>
         </div>
-        <div class="lp-teaser">membership starts at <b>$20/mo</b> &#183; free credits on signup</div>
+
+        <div class="lp-countdown-wrap" id="lp-countdown-wrap">
+          <div class="lp-cd-label">Launching soon</div>
+          <div class="lp-countdown" id="lp-countdown">
+            <div class="lp-cd-unit"><span class="lp-cd-num" id="cd-days">00</span><span class="lp-cd-lbl">days</span></div>
+            <div class="lp-cd-sep">:</div>
+            <div class="lp-cd-unit"><span class="lp-cd-num" id="cd-hours">00</span><span class="lp-cd-lbl">hours</span></div>
+            <div class="lp-cd-sep">:</div>
+            <div class="lp-cd-unit"><span class="lp-cd-num" id="cd-mins">00</span><span class="lp-cd-lbl">minutes</span></div>
+            <div class="lp-cd-sep">:</div>
+            <div class="lp-cd-unit"><span class="lp-cd-num" id="cd-secs">00</span><span class="lp-cd-lbl">seconds</span></div>
+          </div>
+        </div>
+
+        <div class="lp-shot">
+          <img id="lp-shot-img" src="dashboard.png" alt="Exposure Club dashboard preview" onerror="this.parentElement.classList.add('lp-shot-empty')" />
+          <div class="lp-shot-ph">your dashboard preview</div>
+        </div>
       </header>
 
       <section class="lp-section">
@@ -524,6 +783,57 @@
         <h2>The <span class="r">Toolkit</span></h2>
         <p class="lp-lead">One suite, growing fast. Here's what's inside.</p>
         <div class="lp-tools" id="lp-tools"></div>
+      </section>
+
+      <section class="lp-section lp-reviews">
+        <div class="lp-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <h2>Members <span class="r">love it.</span></h2>
+        <div class="lp-review-grid">
+          <!-- REPLACE these with real member quotes. Keep the structure, swap the text/name/role. -->
+          <div class="lp-review">
+            <div class="lp-review-head"><span class="lp-review-ava">M</span><div><b>Member name</b><span>Exposure Club</span></div></div>
+            <p>Your real member quote goes here &#8212; swap this text out.</p>
+          </div>
+          <div class="lp-review">
+            <div class="lp-review-head"><span class="lp-review-ava">M</span><div><b>Member name</b><span>Exposure Club</span></div></div>
+            <p>Another real quote from a member goes here.</p>
+          </div>
+          <div class="lp-review">
+            <div class="lp-review-head"><span class="lp-review-ava">M</span><div><b>Member name</b><span>Exposure Club</span></div></div>
+            <p>A third real member quote goes here.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="lp-section lp-faq-section">
+        <h2>Frequently Asked <span class="r">Questions</span></h2>
+        <p class="lp-lead">Everything you need to know before joining.</p>
+        <div class="lp-faq">
+          <div class="lp-faq-item">
+            <button class="lp-faq-q">What is Exposure Club Marketing Tools?<span class="lp-faq-ic">&#8964;</span></button>
+            <div class="lp-faq-a">It's an AI-powered suite for TikTok organic marketers &#8212; hooks, UGC scripts, a chat strategist, and content planning, all sharing one login and one credit wallet. Plus a free video downloader.</div>
+          </div>
+          <div class="lp-faq-item">
+            <button class="lp-faq-q">What makes it worth it?<span class="lp-faq-ic">&#8964;</span></button>
+            <div class="lp-faq-a">Instead of juggling ten different tools and subscriptions, everything you need to create and plan TikTok content lives in one place, powered by AI trained on what actually works in the affiliate space.</div>
+          </div>
+          <div class="lp-faq-item">
+            <button class="lp-faq-q">How do the credits work?<span class="lp-faq-ic">&#8964;</span></button>
+            <div class="lp-faq-a">Every tool shares one credit balance. Each generation costs a set number of credits (shown on each tool). Buy a credit pack or subscribe monthly &#8212; and you get free credits when you sign up.</div>
+          </div>
+          <div class="lp-faq-item">
+            <button class="lp-faq-q">What can I create?<span class="lp-faq-ic">&#8964;</span></button>
+            <div class="lp-faq-a">Scroll-stopping hooks in your own voice, full UGC scripts (faceless or talking-head), a saved content calendar, and answers to any CPA/TikTok question from the AI Agent.</div>
+          </div>
+          <div class="lp-faq-item">
+            <button class="lp-faq-q">Is it beginner-friendly?<span class="lp-faq-ic">&#8964;</span></button>
+            <div class="lp-faq-a">Yes. Every tool is built to be simple &#8212; type what you want, get a copy-ready result in seconds. No editing skills or setup required.</div>
+          </div>
+          <div class="lp-faq-item">
+            <button class="lp-faq-q">Can I cancel anytime?<span class="lp-faq-ic">&#8964;</span></button>
+            <div class="lp-faq-a">Yes &#8212; you can cancel your plan at any time. See our <a href="/refund.html">refund policy</a> for details on refunds.</div>
+          </div>
+        </div>
       </section>
 
       <section class="lp-final">
@@ -590,22 +900,46 @@
   </div>
 
   <div class="wrap">
-    <nav id="topbar" hidden>
-      <div class="brand"><span class="ec-logo" role="img" aria-label="Exposure Club"></span><span class="name">Exposure Club</span></div>
-      <div class="nav-right">
-        <span class="userchip" id="userchip" hidden>@<b id="user-name"></b></span>
-        <span class="credits" id="credits" style="cursor:pointer" title="Get more credits">&#9889; <b id="credit-num">0</b> <span class="c-label">credits</span> <span style="color:var(--red-bright);font-weight:700">+</span></span>
-        <button class="buycred" id="buycred-btn">Buy Credits</button>
-        <button class="logout" id="logout">log out</button>
-      </div>
-    </nav>
+    <div class="sb-backdrop" id="sb-backdrop"></div>
+    <div class="shell" id="shell" hidden>
+      <aside class="sidebar" id="sidebar">
+        <div class="sb-brand">
+          <span class="ec-logo" role="img" aria-label="Exposure Club"></span>
+          <span class="name">EC<span class="r">.</span></span>
+        </div>
+        <button class="sb-link active" data-nav="dashboard"><span class="sb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>Dashboard</button>
+        <div class="sb-group">Tools</div>
+        <div id="sb-tools"></div>
+        <div class="sb-spacer"></div>
+        <div class="sb-credits">
+          <div class="sb-cred-top"><span><b id="sb-credit-num">0</b> credits left</span><span class="sb-manage" id="sb-manage">Manage</span></div>
+          <div class="sb-cred-bar"><div class="sb-cred-fill" id="sb-cred-fill"></div></div>
+        </div>
+        <div class="sb-user">
+          <span class="sb-ava" id="sb-ava">?</span>
+          <span class="sb-uname" id="sb-uname">member</span>
+          <button class="sb-logout" id="logout">logout</button>
+        </div>
+      </aside>
+
+      <div class="main">
+        <div class="topbar2">
+          <button class="mobile-menu" id="mobile-menu">&#9776;</button>
+          <div style="flex:1"></div>
+          <span class="userchip" id="userchip" hidden>@<b id="user-name"></b></span>
+          <span class="tb-credits" id="credits" title="Get more credits">&#9889; <b id="credit-num">0</b> credits</span>
+          <button class="tb-buy" id="buycred-btn">Buy Credits</button>
+        </div>
+        <div class="content" id="content">
 
     <!-- DASHBOARD -->
     <section class="view active" id="view-dashboard">
-      <div class="dash-hero">
-        <span class="eyebrow">&#128274; Members Toolkit</span>
-        <h1 class="dash-title">THE <span class="r">TOOLKIT.</span></h1>
-        <p class="dash-sub">Every tool we build, one login, one credit wallet. Pick one and go.</p>
+      <div class="dash-hero" style="margin-bottom:24px">
+        <h1 class="dash-title" style="font-size:clamp(28px,4vw,40px)">Dashboard</h1>
+        <p class="dash-sub">Every tool, one login, one credit wallet. Pick one and go.</p>
+      </div>
+      <div class="lock-banner" id="lock-banner" style="display:none">
+        &#128274; <b>Launching soon.</b> The tools are locked until launch day &#8212; you can look around, but generating is disabled for now.
       </div>
       <div class="tools-grid" id="tools-grid"></div>
 
@@ -788,10 +1122,145 @@
       <div class="pl-saved" id="pl-saved"></div>
     </section>
 
+    <section class="view" id="view-lander">
+      <button class="back" data-back>&#8592; back to tools</button>
+      <h1 class="glitch" id="lb-mark"><span class="mark-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M7 13h6M7 16h10"/></svg></span>LANDER<span class="dot-red">.</span></h1>
+      <p class="sub">describe your offer &#8212; get a full <b>landing page</b> you can download and host anywhere.</p>
+      <div class="cost-badge">&#9889; 8 credits per page</div>
+
+      <div class="starter-chips" id="lb-chips">
+        <button type="button" class="starter-chip">sweepstakes offer &#8212; win a $500 gift card</button>
+        <button type="button" class="starter-chip">mobile game install, gen-z audience</button>
+        <button type="button" class="starter-chip">finance app signup, trust-focused</button>
+      </div>
+
+      <form id="lb-form" autocomplete="off">
+        <div class="hg-field">
+          <textarea id="lb-brief" rows="4" placeholder="describe the page&#8230;&#10;&#10;e.g. a landing page for a $500 gift card sweepstakes. audience is us mobile users 18-34. needs an email capture and a big claim button." aria-label="Your brief"></textarea>
+          <div class="hg-row">
+            <span class="hg-hint" id="lb-count">0 / 1200</span>
+            <button class="grab" id="lb-go" type="submit">
+              <span>build page</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="lb-styles" id="lb-styles">
+          <button type="button" class="lb-style active" data-style="">auto</button>
+          <button type="button" class="lb-style" data-style="bold, high-contrast, punchy">bold</button>
+          <button type="button" class="lb-style" data-style="clean, minimal, lots of whitespace">minimal</button>
+          <button type="button" class="lb-style" data-style="dark mode, neon accents, modern SaaS">dark</button>
+          <button type="button" class="lb-style" data-style="playful, colorful, rounded, friendly">playful</button>
+        </div>
+        <div class="err" id="lb-err" role="alert"></div>
+      </form>
+
+      <div class="oos" id="lb-oos">
+        <p><b>out of credits.</b> grab more to keep building.</p>
+        <button class="sub-btn" id="lb-sub-btn">get more &#8594;</button>
+      </div>
+
+      <div class="lb-build" id="lb-build">
+        <div class="lb-steps" id="lb-steps"></div>
+        <div class="lb-bar"><div class="lb-bar-fill" id="lb-bar-fill"></div></div>
+      </div>
+
+      <div class="lb-result" id="lb-result">
+        <div class="lb-toolbar">
+          <span class="lb-dots"><i></i><i></i><i></i></span>
+          <span class="lb-url" id="lb-url">your-page.html</span>
+          <span class="lb-actions">
+            <button class="lb-btn" id="lb-select">&#9678; select</button>
+            <button class="lb-btn" id="lb-undo" disabled>undo</button>
+            <button class="lb-btn" id="lb-copy">copy code</button>
+            <button class="lb-btn primary" id="lb-download">download</button>
+            <button class="lb-btn" id="lb-deploy">host it &#8594;</button>
+          </span>
+        </div>
+        <iframe id="lb-frame" class="lb-frame" sandbox="allow-scripts" title="Landing page preview"></iframe>
+        <div class="lb-refine">
+          <div class="lb-target" id="lb-target">Editing the <b>whole page</b> &#8212; or hit <b>select</b> and click any element in the preview.</div>
+          <div class="lb-refine-row">
+            <input id="lb-change" type="text" placeholder="what should change? e.g. make the CTA green and say Claim Now" aria-label="Describe the change" />
+            <button class="lb-btn primary" id="lb-apply">apply &#183; 4cr</button>
+          </div>
+          <div class="err" id="lb-refine-err" role="alert"></div>
+        </div>
+      </div>
+
+      <div class="lb-deploy-help" id="lb-deploy-help">
+        <b>Hosting it in 30 seconds</b>
+        <ol>
+          <li>Your file just downloaded &#8212; keep it handy.</li>
+          <li>Netlify Drop opened in a new tab.</li>
+          <li>Drag the file onto the drop zone. You get a live URL instantly.</li>
+        </ol>
+        <p class="lb-note">It hosts on <b>your</b> Netlify account, not ours &#8212; so the page and its traffic stay yours.</p>
+      </div>
+    </section>
+
+    <section class="view" id="view-links">
+      <button class="back" data-back>&#8592; back to tools</button>
+      <h1 class="glitch" id="lk-mark"><span class="mark-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7L12 19"/></svg></span>LINKS<span class="dot-red">.</span></h1>
+      <p class="sub">short links that <b>break out</b> of the TikTok &amp; IG in-app browser &#8212; and track every click.</p>
+      <div class="cost-badge">&#9889; 1 credit per link</div>
+
+      <form id="lk-form" autocomplete="off">
+        <div class="hg-field">
+          <input id="lk-dest" type="text" placeholder="paste your destination link&#8230;" aria-label="Destination URL" />
+        </div>
+        <div class="hg-field" style="margin-top:10px">
+          <input id="lk-label" type="text" placeholder="label (optional) &#8212; e.g. shein sweeps / tiktok bio" aria-label="Label" />
+        </div>
+        <div class="lk-row2">
+          <label class="lk-toggle"><input type="checkbox" id="lk-escape" checked /><span></span>escape in-app browser</label>
+          <button class="grab" id="lk-go" type="submit">
+            <span>create link</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <div class="err" id="lk-err" role="alert"></div>
+      </form>
+      <div class="oos" id="lk-oos">
+        <p><b>out of credits.</b> grab more to keep creating links.</p>
+        <button class="sub-btn" id="lk-sub-btn">get more &#8594;</button>
+      </div>
+
+      <div class="lk-section-title">Your links</div>
+      <div class="lk-list" id="lk-list"><div class="pl-empty">loading&#8230;</div></div>
+
+      <div class="lk-section-title">Analytics</div>
+      <div class="lk-filters">
+        <select id="lk-f-days" class="lk-select" aria-label="Date range">
+          <option value="7">last 7 days</option>
+          <option value="30" selected>last 30 days</option>
+          <option value="90">last 90 days</option>
+        </select>
+        <select id="lk-f-link" class="lk-select" aria-label="Filter by link">
+          <option value="">all links</option>
+        </select>
+      </div>
+      <div class="lk-stats" id="lk-stats"></div>
+    </section>
+
     <footer>
       <span>exposure club toolkit</span>
       <span>powered by Exposure Club</span>
     </footer>
+        </div><!-- /.content -->
+      </div><!-- /.main -->
+    </div><!-- /.shell -->
+
+    <div class="logout-modal" id="logout-modal" hidden>
+      <div class="logout-box">
+        <h3>Log out?</h3>
+        <p>Are you sure you want to log out?</p>
+        <div class="logout-actions">
+          <button class="lo-cancel" id="lo-cancel">Cancel</button>
+          <button class="lo-confirm" id="lo-confirm">Yes, log out</button>
+        </div>
+      </div>
+    </div>
   </div>
 
 <script type="module">
@@ -824,6 +1293,8 @@ const TOOL_ICONS = {
   ugc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M15 3v4h4"/><path d="M9 11h6M9 15h6"/></svg>',
   advisor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6.5A8 8 0 1 1 21 12z"/><path d="M12 7v.01M12 10v4"/></svg>',
   cliptoolkit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.5 8.5L20 18M8.5 15.5L20 6"/></svg>',
+  lander: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M7 13h6M7 16h10"/></svg>',
+  links: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7L12 19"/></svg>',
   planner: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>',
 };
 function toolIcon(id){ return TOOL_ICONS[id] || ''; }
@@ -844,6 +1315,12 @@ const TOOLS = [
   { id:'planner', mono:'CP', name:'Content Planner', status:'live', cost:4,
     blurb:'Generate a posting plan, save it, check off as you post.',
     bullets:['3 / 7 / 14 / 30 days','2 ideas per day','Track what you posted'] },
+  { id:'lander', mono:'LP', name:'Landing Page Builder', status:'live', cost:8,
+    blurb:'Describe your offer, get a full landing page you can ship.',
+    bullets:['Single HTML file','Download or host anywhere','Mobile-ready'] },
+  { id:'links', mono:'LK', name:'Link Tracker', status:'live', cost:1,
+    blurb:'Short links that escape the in-app browser \u2014 with click analytics.',
+    bullets:['Breaks out of TikTok/IG','Tracks every click','Filterable dashboard'] },
   { id:'downloader', mono:'YK', name:'YOINK Downloader', status:'live', cost:1,
     blurb:'Free bonus — grab TikTok & Instagram clips, zero watermark.',
     bullets:['TikTok · Instagram','MP4 + audio-only','No watermark'] },
@@ -852,7 +1329,8 @@ const DL_COST = (TOOLS.find(t=>t.id==='downloader')||{cost:1}).cost;
 
 const gate=$('gate'), gateMark=$('gate-mark'), authForm=$('auth-form'), emailIn=$('email'), passIn=$('password'),
   authBtn=$('authbtn'), authBtnLabel=$('authbtn-label'), authErr=$('auth-err'), authSub=$('auth-sub');
-const topbar=$('topbar'), creditsEl=$('credits'), creditNum=$('credit-num'), logoutBtn=$('logout');
+const topbar=$('shell'), creditsEl=$('credits'), creditNum=$('credit-num'), logoutBtn=$('logout');
+const shell=$('shell'), sbCreditNum=$('sb-credit-num'), sbCredFill=$('sb-cred-fill'), sbAva=$('sb-ava'), sbUname=$('sb-uname');
 const usernameIn=$('username'), usernameField=$('username-field'), userchip=$('userchip'), userName=$('user-name');
 const form=$('form'), link=$('link'), grab=$('grab'), err=$('err'), mark=$('mark');
 const card=$('card'), thumb=$('thumb'), statusEl=$('status'), authorEl=$('author'), titleEl=$('title'), dl=$('dl');
@@ -866,20 +1344,62 @@ let mode='login', session=null, demoCredits=5;
 function showErr(el,msg){ el.textContent='✕ '+msg; el.classList.add('show'); }
 function clearErr(el){ el.classList.remove('show'); }
 function glitch(node){ node.classList.remove('go'); void node.offsetWidth; node.classList.add('go'); }
-function setCredits(n){ if(n==null) return; creditNum.textContent=n; creditsEl.classList.toggle('low', n<=1); }
-function setUser(name){ if(!name){ userchip.hidden=true; return; } userName.textContent=name; userchip.hidden=false; }
+function setCredits(n){ if(n==null) return; creditNum.textContent=n; creditsEl.classList.toggle('low', n<=1);
+  if(sbCreditNum) sbCreditNum.textContent=n;
+  if(sbCredFill){ const pct=Math.max(4,Math.min(100, (n/500)*100)); sbCredFill.style.width=pct+'%'; }
+}
+function setUser(name){ if(!name){ userchip.hidden=true; return; } userName.textContent=name; userchip.hidden=false;
+  if(sbUname) sbUname.textContent=name;
+  if(sbAva) sbAva.textContent=(name[0]||'?').toUpperCase();
+}
 
 function showView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const v=$('view-'+name); if(v) v.classList.add('active');
+  // sidebar active state
+  document.querySelectorAll('.sb-link').forEach(l=>l.classList.toggle('active', l.dataset.nav===name));
+  // close mobile sidebar after navigating
+  const sb=$('sidebar'); if(sb) sb.classList.remove('open');
+  const bd=$('sb-backdrop'); if(bd) bd.classList.remove('show');
   try{ window.scrollTo(0,0); }catch(_){}
   if(name==='downloader' && link) setTimeout(()=>link.focus(),120);
   if(name==='hookgen' && hgExamples) setTimeout(()=>hgExamples.focus(),120);
   if(name==='ugc' && sgTopic) setTimeout(()=>sgTopic.focus(),120);
   if(name==='advisor' && adQuestion) setTimeout(()=>adQuestion.focus(),120);
   if(name==='planner'){ if(plTopic) setTimeout(()=>plTopic.focus(),120); loadPlans(); }
+  if(name==='lander' && lbBrief) setTimeout(()=>lbBrief.focus(),120);
+  if(name==='links'){ if(lkDest) setTimeout(()=>lkDest.focus(),120); lkLoad(); lkLoadStats(); }
 }
-function enterHub(){ hideLanding(); gate.classList.add('hide'); topbar.hidden=false; showView('dashboard'); }
+function enterHub(){ hideLanding(); gate.classList.add('hide'); topbar.hidden=false; showView('dashboard'); checkUnlock(); identifyIntercom(); }
+
+// Tell Intercom who's logged in (so chats are tied to a real account).
+function identifyIntercom(){
+  try{
+    if(typeof window.Intercom!=='function' || !session || !session.user) return;
+    const u=session.user;
+    window.Intercom('update', {
+      user_id: u.id,
+      email: u.email || undefined,
+      name: (u.user_metadata && u.user_metadata.username) || undefined,
+      created_at: u.created_at ? Math.floor(new Date(u.created_at).getTime()/1000) : undefined
+    });
+  }catch(_){}
+}
+
+// Pre-launch lock: show a banner if this user can't use tools yet.
+let toolsLocked=false;
+async function checkUnlock(){
+  if(DEMO) return;
+  try{
+    const token=session&&session.access_token;
+    const r=await fetch('/api/me',{headers:{'Authorization':'Bearer '+(token||'')}});
+    if(!r.ok) return;
+    const data=await r.json();
+    toolsLocked = !data.unlocked;
+    const banner=document.getElementById('lock-banner');
+    if(banner) banner.style.display = toolsLocked ? 'block' : 'none';
+  }catch(_){}
+}
 function showAuth(){ hideLanding(); gate.classList.remove('hide'); topbar.hidden=true; setTimeout(()=>emailIn.focus(),100); }
 
 // ---- landing ----
@@ -917,7 +1437,26 @@ function renderTools(){
       +'<div class="cost">'+t.cost+' credit'+(t.cost>1?'s':'')+' / use</div>'+btn+'</article>';
   }).join('');
   toolsGrid.querySelectorAll('.launch[data-tool]').forEach(b=>{
-    b.addEventListener('click',()=>{ const t=b.dataset.tool; if(t==='downloader') showView('downloader'); else if(t==='hookgen') showView('hookgen'); else if(t==='ugc') showView('ugc'); else if(t==='advisor') showView('advisor'); else if(t==='planner') showView('planner'); });
+    b.addEventListener('click',()=>navTool(b.dataset.tool));
+  });
+  renderSidebarTools();
+}
+
+// tools that have a working view
+const NAV_TOOLS = ['downloader','hookgen','ugc','advisor','planner','lander','links'];
+function navTool(id){ if(NAV_TOOLS.includes(id)) showView(id); }
+
+function renderSidebarTools(){
+  const host=$('sb-tools'); if(!host) return;
+  host.innerHTML = TOOLS.map(t=>{
+    const live=t.status==='live';
+    const soon=live?'':'<span class="sb-soon">soon</span>';
+    return '<button class="sb-link" data-nav="'+t.id+'" '+(live?'':'disabled style="opacity:.5;cursor:default"')+'>'
+      +'<span class="sb-ic">'+toolIcon(t.id)+'</span>'+t.name+soon+'</button>';
+  }).join('');
+  host.querySelectorAll('.sb-link[data-nav]').forEach(b=>{
+    if(b.disabled) return;
+    b.addEventListener('click',()=>navTool(b.dataset.nav));
   });
 }
 
@@ -925,6 +1464,12 @@ document.querySelectorAll('.chip:not(.lock)').forEach(chip=>{
   chip.addEventListener('click',()=>chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed')==='true'?'false':'true'));
 });
 document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click',()=>showView('dashboard')));
+
+// sidebar dashboard link + mobile controls
+document.querySelector('.sb-link[data-nav="dashboard"]')?.addEventListener('click',()=>showView('dashboard'));
+$('sb-manage')?.addEventListener('click',()=>openPricing&&openPricing());
+$('mobile-menu')?.addEventListener('click',()=>{ $('sidebar')?.classList.add('open'); $('sb-backdrop')?.classList.add('show'); });
+$('sb-backdrop')?.addEventListener('click',()=>{ $('sidebar')?.classList.remove('open'); $('sb-backdrop')?.classList.remove('show'); });
 
 function toggleMode(){
   mode = mode==='login'?'signup':'login';
@@ -974,7 +1519,12 @@ authForm.addEventListener('submit', async (e)=>{
   }finally{ authBtn.disabled=false; }
 });
 
-logoutBtn.addEventListener('click', async ()=>{ if(!DEMO&&supabase) await supabase.auth.signOut(); session=null; setUser(null); topbar.hidden=true; showLanding(); });
+const logoutModal=$('logout-modal');
+function doLogout(){ logoutModal.hidden=true; try{ if(typeof window.Intercom==='function') window.Intercom('shutdown'); }catch(_){} (async()=>{ if(!DEMO&&supabase) await supabase.auth.signOut(); session=null; setUser(null); topbar.hidden=true; showLanding(); })(); }
+logoutBtn.addEventListener('click', ()=>{ logoutModal.hidden=false; });
+$('lo-cancel')?.addEventListener('click', ()=>{ logoutModal.hidden=true; });
+$('lo-confirm')?.addEventListener('click', doLogout);
+logoutModal?.addEventListener('click', (e)=>{ if(e.target===logoutModal) logoutModal.hidden=true; });
 
 async function refreshBalance(){
   if(DEMO){ setCredits(demoCredits); return demoCredits; }
@@ -1259,11 +1809,42 @@ adForm&&adForm.addEventListener('submit', async (e)=>{
     } else {
       const r=await fetch('/api/agent/send',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(agToken()||'')},body:JSON.stringify({message, chatId:agChatId})});
       if(!r.ok){ let m='couldn\u2019t send. try again.'; let code=r.status; try{ m=(await r.json()).error||m; }catch(_){} const er=new Error(m); er.code=code; throw er; }
-      const data=await r.json();
       typing.remove();
-      agChatId=data.chatId||agChatId;
-      if(data.creditsLeft!=null) setCredits(data.creditsLeft); else await refreshBalance();
-      agAddMsg('bot', data.answer||'');
+
+      // stream the reply in, word by word
+      const bubble=agAddMsg('bot','');
+      bubble.innerHTML='<span class="ag-body"></span><span class="ag-cursor"></span>';
+      const body=bubble.querySelector('.ag-body');
+      let acc='', streamErr=null, gotDone=false;
+      const reader=r.body.getReader(), dec=new TextDecoder();
+      let buf='';
+      while(true){
+        const {value,done}=await reader.read();
+        if(done) break;
+        buf+=dec.decode(value,{stream:true});
+        let i;
+        while((i=buf.indexOf('\n\n'))>=0){
+          const chunk=buf.slice(0,i).trim(); buf=buf.slice(i+2);
+          if(!chunk.startsWith('data:')) continue;
+          let obj; try{ obj=JSON.parse(chunk.slice(5).trim()); }catch(_){ continue; }
+          if(obj.error){ streamErr=obj.error; continue; }
+          if(obj.done){
+            gotDone=true;
+            agChatId=obj.chatId||agChatId;
+            if(obj.creditsLeft!=null) setCredits(obj.creditsLeft); else await refreshBalance();
+            continue;
+          }
+          if(typeof obj.t==='string'){
+            acc+=obj.t;
+            body.innerHTML=agFmt(acc);
+            bubble.scrollIntoView({behavior:'smooth',block:'end'});
+          }
+        }
+      }
+      const cur=bubble.querySelector('.ag-cursor'); if(cur) cur.remove();
+      if(streamErr){ bubble.remove(); const er=new Error(streamErr); throw er; }
+      if(!acc){ bubble.remove(); throw new Error('got an empty response. try again.'); }
+      if(!gotDone) await refreshBalance();
     }
   }catch(ex){
     typing.remove();
@@ -1467,6 +2048,337 @@ function renderPlans(plans){
 }
 
 
+// ---- Landing Page Builder ----
+const LB_COST = (TOOLS.find(t=>t.id==='lander')||{cost:8}).cost;
+const lbForm=$('lb-form'), lbBrief=$('lb-brief'), lbGo=$('lb-go'), lbErr=$('lb-err'),
+      lbOos=$('lb-oos'), lbCount=$('lb-count'), lbBuild=$('lb-build'), lbSteps=$('lb-steps'),
+      lbBarFill=$('lb-bar-fill'), lbResult=$('lb-result'), lbFrame=$('lb-frame'), lbHelp=$('lb-deploy-help');
+let lbStyle='', lbHtml='', lbTimer=null;
+
+lbBrief&&lbBrief.addEventListener('input',()=>{
+  const n=lbBrief.value.length;
+  lbCount.textContent=n+' / 1200';
+  lbCount.classList.toggle('over', n>1200);
+});
+document.querySelectorAll('.lb-style').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.lb-style').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); lbStyle=b.dataset.style||'';
+  });
+});
+document.querySelectorAll('#lb-chips .starter-chip').forEach(c=>{
+  c.addEventListener('click',()=>{ lbBrief.value=c.textContent; lbBrief.dispatchEvent(new Event('input')); lbBrief.focus(); });
+});
+$('lb-sub-btn')&&$('lb-sub-btn').addEventListener('click',()=>openPricing&&openPricing());
+
+const LB_STAGES=['Reading your brief','Choosing layout & type','Writing the HTML','Styling & polish','Final pass'];
+function lbStartBuild(){
+  lbResult.classList.remove('show'); lbHelp.classList.remove('show');
+  lbBuild.classList.add('show');
+  lbSteps.innerHTML = LB_STAGES.map((t,i)=>
+    '<div class="lb-step pending" data-i="'+i+'" style="animation-delay:'+(i*70)+'ms"><span class="lb-ic"></span><span class="lb-label">'+t+'</span></div>'
+  ).join('');
+  lbBarFill.style.width='4%';
+  let i=0;
+  const setActive=(n)=>{
+    lbSteps.querySelectorAll('.lb-step').forEach((el,idx)=>{
+      el.classList.toggle('done', idx<n);
+      el.classList.toggle('active', idx===n);
+      el.classList.toggle('pending', idx>n);
+    });
+    lbBarFill.style.width = Math.min(92, 8 + n*20) + '%';
+  };
+  setActive(0);
+  clearInterval(lbTimer);
+  lbTimer=setInterval(()=>{ if(i < LB_STAGES.length-1){ i++; setActive(i); } }, 2600);
+}
+function lbFinishBuild(){
+  clearInterval(lbTimer);
+  lbSteps.querySelectorAll('.lb-step').forEach(el=>{ el.classList.remove('active','pending'); el.classList.add('done'); });
+  lbBarFill.style.width='100%';
+  setTimeout(()=>lbBuild.classList.remove('show'), 550);
+}
+function lbAbortBuild(){ clearInterval(lbTimer); lbBuild.classList.remove('show'); }
+
+lbForm&&lbForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  clearErr(lbErr); lbOos.classList.remove('show');
+  const brief=lbBrief.value.trim();
+  if(!brief){ showErr(lbErr,'describe the page you want first.'); return; }
+  if(brief.length>1200){ showErr(lbErr,'keep the brief a bit shorter.'); return; }
+
+  lbGo.disabled=true; lbPrev=null; lbTarget=null; if($('lb-undo')) $('lb-undo').disabled=true; lbStartBuild();
+  try{
+    if(DEMO){ throw new Error('the builder works on the live site.'); }
+    const token=session&&session.access_token;
+    const r=await fetch('/api/lander',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({brief,style:lbStyle})});
+    if(!r.ok){ let m='couldn\u2019t build it. try again.'; let code=r.status; try{ m=(await r.json()).error||m; }catch(_){} const er=new Error(m); er.code=code; throw er; }
+    const data=await r.json();
+    if(data.creditsLeft!=null) setCredits(data.creditsLeft); else await refreshBalance();
+    lbHtml = data.html||'';
+    lbFinishBuild();
+    setTimeout(()=>lbRenderPage(), 300);
+  }catch(ex){
+    lbAbortBuild();
+    if(ex.code===402){ lbOos.classList.add('show'); setCredits(0); }
+    else showErr(lbErr, ex.message||'something went wrong. try again.');
+  }finally{ lbGo.disabled=false; }
+});
+
+const LB_PICKER = `<script>(function(){
+var on=false,last=null;
+function clear(){ if(last){ last.style.outline=''; last.style.outlineOffset=''; last=null; } }
+document.addEventListener('mouseover',function(e){ if(!on) return; clear(); last=e.target;
+  last.style.outline='2px solid #FF574C'; last.style.outlineOffset='1px'; },true);
+document.addEventListener('mouseout',function(){ if(on) clear(); },true);
+document.addEventListener('click',function(e){
+  if(!on) return; e.preventDefault(); e.stopPropagation();
+  var el=e.target,path=[],n=el;
+  while(n&&n.nodeType===1&&n.tagName.toLowerCase()!=='body'&&path.length<6){
+    var i=1,sib=n; while((sib=sib.previousElementSibling))i++;
+    path.unshift(n.tagName.toLowerCase()+':nth-child('+i+')'); n=n.parentElement;
+  }
+  parent.postMessage({__lander:1,tag:el.tagName.toLowerCase(),
+    text:(el.textContent||'').replace(/\s+/g,' ').trim().slice(0,90),
+    cls:String(el.className||'').slice(0,70), sel:path.join(' > ')},'*');
+  on=false; clear();
+},true);
+window.addEventListener('message',function(e){
+  if(e.data&&e.data.__landerPick!==undefined){ on=!!e.data.__landerPick; if(!on) clear(); }
+});
+})();<\/script>`;
+
+let lbTarget=null, lbPrev=null, lbPicking=false;
+
+function lbInject(html){
+  return /<\/body>/i.test(html) ? html.replace(/<\/body>/i, LB_PICKER+'</body>') : html+LB_PICKER;
+}
+
+// element picked inside the sandboxed preview
+window.addEventListener('message',(e)=>{
+  if(!lbFrame || e.source!==lbFrame.contentWindow) return;   // only trust our own frame
+  const d=e.data; if(!d || d.__lander!==1) return;
+  lbTarget=d;
+  lbPicking=false;
+  $('lb-select').classList.remove('on');
+  lbFrame.classList.remove('selecting');
+  const label=d.text ? '"'+d.text+'"' : (d.cls ? '.'+d.cls.split(' ')[0] : d.sel);
+  $('lb-target').innerHTML='Editing <b>&lt;'+d.tag+'&gt;</b> '+agEsc(label)+' &#8212; <span id="lb-clear" style="cursor:pointer;text-decoration:underline">clear</span>';
+  $('lb-clear').addEventListener('click', lbClearTarget);
+  $('lb-change').focus();
+});
+
+function lbClearTarget(){
+  lbTarget=null;
+  $('lb-target').innerHTML='Editing the <b>whole page</b> &#8212; or hit <b>select</b> and click any element in the preview.';
+}
+
+$('lb-select')&&$('lb-select').addEventListener('click',()=>{
+  lbPicking=!lbPicking;
+  $('lb-select').classList.toggle('on', lbPicking);
+  lbFrame.classList.toggle('selecting', lbPicking);
+  try{ lbFrame.contentWindow.postMessage({__landerPick:lbPicking},'*'); }catch(_){}
+});
+
+$('lb-undo')&&$('lb-undo').addEventListener('click',()=>{
+  if(!lbPrev) return;
+  lbHtml=lbPrev; lbPrev=null;
+  $('lb-undo').disabled=true;
+  lbRenderPage();
+});
+
+async function lbApplyChange(){
+  const instruction=$('lb-change').value.trim();
+  const errEl=$('lb-refine-err');
+  clearErr(errEl);
+  if(!instruction){ showErr(errEl,'describe the change first.'); return; }
+  if(!lbHtml){ showErr(errEl,'build a page first.'); return; }
+
+  const btn=$('lb-apply'); btn.disabled=true; const old=btn.textContent; btn.textContent='applying…';
+  lbBuild.classList.add('show');
+  lbSteps.innerHTML='<div class="lb-step active"><span class="lb-ic"></span><span class="lb-label">Applying your change</span></div>';
+  lbBarFill.style.width='55%';
+  try{
+    const target = lbTarget ? ('<'+lbTarget.tag+'> with text "'+lbTarget.text+'" (css path: '+lbTarget.sel+')') : '';
+    const token=session&&session.access_token;
+    const r=await fetch('/api/lander/refine',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({html:lbHtml,instruction,target})});
+    if(!r.ok){ let m='couldn\u2019t apply that. try again.'; let code=r.status; try{ m=(await r.json()).error||m; }catch(_){} const er=new Error(m); er.code=code; throw er; }
+    const data=await r.json();
+    if(data.creditsLeft!=null) setCredits(data.creditsLeft); else await refreshBalance();
+    lbPrev=lbHtml;                       // one-step undo
+    lbHtml=data.html||lbHtml;
+    $('lb-undo').disabled=false;
+    $('lb-change').value='';
+    lbBarFill.style.width='100%';
+    setTimeout(()=>{ lbBuild.classList.remove('show'); lbRenderPage(); }, 400);
+  }catch(ex){
+    lbBuild.classList.remove('show');
+    if(ex.code===402){ lbOos.classList.add('show'); setCredits(0); }
+    else showErr(errEl, ex.message||'something went wrong. try again.');
+  }finally{ btn.disabled=false; btn.textContent=old; }
+}
+$('lb-apply')&&$('lb-apply').addEventListener('click', lbApplyChange);
+$('lb-change')&&$('lb-change').addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); lbApplyChange(); } });
+
+function lbRenderPage(){
+  if(!lbHtml) return;
+  lbFrame.srcdoc = lbInject(lbHtml);   // picker injected for preview only; downloads stay clean
+  lbResult.classList.add('show');
+  lbResult.scrollIntoView({behavior:'smooth', block:'start'});
+}
+function lbFilename(){
+  const base=(lbBrief.value.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40))||'landing-page';
+  return base+'.html';
+}
+function lbDownload(){
+  if(!lbHtml) return;
+  const blob=new Blob([lbHtml],{type:'text/html'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=lbFilename();
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+$('lb-download')&&$('lb-download').addEventListener('click', lbDownload);
+$('lb-copy')&&$('lb-copy').addEventListener('click',()=>{
+  if(!lbHtml) return;
+  navigator.clipboard&&navigator.clipboard.writeText(lbHtml);
+  const b=$('lb-copy'); b.classList.add('copied'); b.textContent='copied';
+  setTimeout(()=>{ b.classList.remove('copied'); b.textContent='copy code'; },1500);
+});
+$('lb-deploy')&&$('lb-deploy').addEventListener('click',()=>{
+  if(!lbHtml) return;
+  lbDownload();
+  window.open('https://app.netlify.com/drop','_blank','noopener');
+  lbHelp.classList.add('show');
+});
+
+// ---- Link Tracker ----
+const lkForm=$('lk-form'), lkDest=$('lk-dest'), lkLabel=$('lk-label'), lkEscape=$('lk-escape'),
+      lkGo=$('lk-go'), lkErr=$('lk-err'), lkOos=$('lk-oos'), lkList=$('lk-list'), lkStatsBox=$('lk-stats');
+let lkBase='', lkItems=[];
+
+function lkEsc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function lkToken(){ return session&&session.access_token; }
+$('lk-sub-btn')&&$('lk-sub-btn').addEventListener('click',()=>openPricing&&openPricing());
+
+lkForm&&lkForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  clearErr(lkErr); lkOos.classList.remove('show');
+  const destination=lkDest.value.trim();
+  if(!destination){ showErr(lkErr,'paste a destination link first.'); return; }
+  lkGo.disabled=true;
+  try{
+    if(DEMO) throw new Error('links work on the live site.');
+    const r=await fetch('/api/links/create',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(lkToken()||'')},
+      body:JSON.stringify({destination,label:lkLabel.value.trim(),escapeApp:lkEscape.checked})});
+    if(!r.ok){ let m='couldn\u2019t create that link.'; let code=r.status; try{ m=(await r.json()).error||m; }catch(_){} const er=new Error(m); er.code=code; throw er; }
+    const data=await r.json();
+    if(data.creditsLeft!=null) setCredits(data.creditsLeft); else await refreshBalance();
+    lkDest.value=''; lkLabel.value='';
+    await lkLoad(); await lkLoadStats();
+    if(data.shortUrl){ navigator.clipboard&&navigator.clipboard.writeText(data.shortUrl); showToast('&#10003; link created &#8212; <b>copied</b> to clipboard'); }
+  }catch(ex){
+    if(ex.code===402){ lkOos.classList.add('show'); setCredits(0); }
+    else showErr(lkErr, ex.message||'something went wrong.');
+  }finally{ lkGo.disabled=false; }
+});
+
+async function lkLoad(){
+  if(DEMO){ lkList.innerHTML='<div class="pl-empty">links show on the live site.</div>'; return; }
+  try{
+    const r=await fetch('/api/links/list',{headers:{'Authorization':'Bearer '+(lkToken()||'')}});
+    if(!r.ok) throw new Error('load failed');
+    const data=await r.json();
+    lkBase=data.base||''; lkItems=data.links||[];
+    lkRender();
+    const sel=$('lk-f-link'); const cur=sel.value;
+    sel.innerHTML='<option value="">all links</option>'+lkItems.map(l=>
+      '<option value="'+l.id+'">'+lkEsc(l.label||('/r/'+l.slug))+'</option>').join('');
+    sel.value=cur;
+  }catch(ex){ lkList.innerHTML='<div class="pl-empty">couldn\u2019t load your links.</div>'; }
+}
+
+function lkRender(){
+  if(!lkItems.length){ lkList.innerHTML='<div class="pl-empty">no links yet \u2014 create your first one above.</div>'; return; }
+  lkList.innerHTML=lkItems.map(l=>{
+    const short=(lkBase||'')+'/r/'+l.slug;
+    return '<div class="lk-item">'
+      +'<div class="lk-main">'
+      +'<div class="lk-short" data-copy="'+lkEsc(short)+'" title="click to copy">'+lkEsc(short)+'</div>'
+      +'<div class="lk-dest">&#8594; '+lkEsc(l.destination)+'</div>'
+      +(l.label?'<span class="lk-lab">'+lkEsc(l.label)+'</span>':'')
+      +'</div>'
+      +'<div class="lk-clicks"><b>'+(l.clicks||0)+'</b><span>clicks</span></div>'
+      +'<div class="lk-acts">'
+      +'<button class="lk-mini'+(l.escape_app?' on':'')+'" data-esc="'+l.id+'" title="escape in-app browser">escape '+(l.escape_app?'on':'off')+'</button>'
+      +'<button class="lk-mini" data-del="'+l.id+'">delete</button>'
+      +'</div></div>';
+  }).join('');
+
+  lkList.querySelectorAll('.lk-short').forEach(el=>el.addEventListener('click',()=>{
+    navigator.clipboard&&navigator.clipboard.writeText(el.dataset.copy);
+    showToast('&#10003; <b>copied</b> to clipboard');
+  }));
+  lkList.querySelectorAll('[data-esc]').forEach(b=>b.addEventListener('click', async ()=>{
+    const item=lkItems.find(x=>x.id===b.dataset.esc); if(!item) return;
+    const next=!item.escape_app;
+    b.disabled=true;
+    try{
+      await fetch('/api/links/update',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(lkToken()||'')},
+        body:JSON.stringify({id:item.id,escapeApp:next})});
+      await lkLoad();
+    }catch(_){ b.disabled=false; }
+  }));
+  lkList.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', async ()=>{
+    if(!confirm('Delete this link? Its clicks go too, and the short URL stops working.')) return;
+    try{
+      await fetch('/api/links/delete',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(lkToken()||'')},
+        body:JSON.stringify({id:b.dataset.del})});
+      await lkLoad(); await lkLoadStats();
+    }catch(_){}
+  }));
+}
+
+async function lkLoadStats(){
+  if(DEMO){ lkStatsBox.innerHTML='<div class="pl-empty">analytics show on the live site.</div>'; return; }
+  const days=$('lk-f-days').value, linkId=$('lk-f-link').value;
+  lkStatsBox.innerHTML='<div class="hg-loading"><span class="hg-spin"></span>loading analytics&#8230;</div>';
+  try{
+    const q='?days='+encodeURIComponent(days)+(linkId?'&linkId='+encodeURIComponent(linkId):'');
+    const r=await fetch('/api/links/stats'+q,{headers:{'Authorization':'Bearer '+(lkToken()||'')}});
+    if(!r.ok) throw new Error('stats failed');
+    lkRenderStats(await r.json());
+  }catch(ex){ lkStatsBox.innerHTML='<div class="pl-empty">couldn\u2019t load analytics.</div>'; }
+}
+$('lk-f-days')&&$('lk-f-days').addEventListener('change', lkLoadStats);
+$('lk-f-link')&&$('lk-f-link').addEventListener('change', lkLoadStats);
+
+function lkBars(title, rows){
+  if(!rows||!rows.length) return '<div class="lk-panel"><h4>'+title+'</h4><div class="pl-empty" style="padding:6px">no data yet</div></div>';
+  const max=Math.max.apply(null, rows.map(r=>r.v))||1;
+  return '<div class="lk-panel"><h4>'+title+'</h4><div class="lk-bars">'+rows.map(r=>
+    '<div class="lk-bar-row"><span class="lk-bar-k">'+lkEsc(r.k)+'</span>'
+    +'<span class="lk-bar-t"><span class="lk-bar-f" style="width:'+Math.max(3,(r.v/max)*100)+'%"></span></span>'
+    +'<span class="lk-bar-v">'+r.v+'</span></div>').join('')+'</div></div>';
+}
+
+function lkRenderStats(d){
+  const rate = d.total ? Math.round((d.escaped/d.total)*100) : 0;
+  const maxDay = Math.max.apply(null, (d.byDay||[]).map(x=>x.v)) || 1;
+  const daysHtml = (d.byDay||[]).map(x=>
+    '<div class="lk-day" style="height:'+Math.max(2,(x.v/maxDay)*100)+'%"><span class="lk-tip">'+x.k+' &#183; '+x.v+'</span></div>').join('');
+
+  lkStatsBox.innerHTML =
+    '<div class="lk-cards">'
+    +'<div class="lk-card"><b>'+d.total+'</b><span>total clicks</span></div>'
+    +'<div class="lk-card"><b>'+d.escaped+'</b><span>escaped in-app</span></div>'
+    +'<div class="lk-card"><b>'+rate+'%</b><span>escape rate</span></div>'
+    +'</div>'
+    +'<div class="lk-panel"><h4>clicks per day</h4><div class="lk-days">'+daysHtml+'</div></div>'
+    +'<div class="lk-grid2">'+lkBars('traffic source', d.byApp)+lkBars('operating system', d.byOs)+'</div>'
+    +'<div class="lk-grid2">'+lkBars('device', d.byDevice)+lkBars('country', d.byCountry)+'</div>';
+}
+
 let balanceBeforeCheckout=null;   // snapshot taken when checkout opens
 function initPaddle(){
   if(paddleReady || DEMO || typeof Paddle==='undefined') return;
@@ -1634,7 +2546,37 @@ resetForm.addEventListener('submit', async (e)=>{
   });
 })();
 
+// ---- landing countdown ----
+(function countdown(){
+  // SET YOUR LAUNCH/PROMO DATE HERE (year, month-1, day, hour, minute)
+  const target = new Date(2026, 7, 7, 13, 0, 0).getTime();  // Aug 7 2026, 1:00 PM (~15 days out)
+  const wrap = document.getElementById('lp-countdown-wrap');
+  if(!wrap) return;
+  const dEl=document.getElementById('cd-days'), hEl=document.getElementById('cd-hours'),
+        mEl=document.getElementById('cd-mins'), sEl=document.getElementById('cd-secs');
+  const pad=(n)=>String(n).padStart(2,'0');
+  function tick(){
+    const now=Date.now(); let diff=target-now;
+    if(diff<=0){ wrap.querySelector('.lp-cd-label').textContent='We\u2019re live'; diff=0; }
+    const d=Math.floor(diff/86400000), h=Math.floor(diff%86400000/3600000),
+          m=Math.floor(diff%3600000/60000), s=Math.floor(diff%60000/1000);
+    if(dEl) dEl.textContent=pad(d); if(hEl) hEl.textContent=pad(h);
+    if(mEl) mEl.textContent=pad(m); if(sEl) sEl.textContent=pad(s);
+  }
+  tick(); setInterval(tick,1000);
+})();
+
 renderTools();
+
+// FAQ accordion
+document.querySelectorAll('.lp-faq-q').forEach(q=>{
+  q.addEventListener('click',()=>{
+    const item=q.parentElement;
+    const wasOpen=item.classList.contains('open');
+    document.querySelectorAll('.lp-faq-item').forEach(i=>i.classList.remove('open'));
+    if(!wasOpen) item.classList.add('open');
+  });
+});
 (async function init(){
   if(DEMO){ showLanding(); return; }
   if(!supabase){ showLanding(); return; }
@@ -1685,7 +2627,10 @@ renderTools();
     </div>
   </div>
   <div class="toast" id="toast"><span class="t-dot"></span><span class="t-txt" id="toast-txt"></span></div>
-<!-- INTERCOM MESSENGER -->
+
+<!-- ===== INTERCOM MESSENGER =====
+     Replace YOUR_APP_ID below with your Intercom App ID (Settings → Installation).
+     It looks like a short code, e.g. "ab12cd34". -->
 <script>
   window.INTERCOM_APP_ID = "dzeevogq";
   window.intercomSettings = { api_base: "https://api-iam.intercom.io", app_id: window.INTERCOM_APP_ID };
@@ -1693,5 +2638,6 @@ renderTools();
 <script>
 (function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/'+w.INTERCOM_APP_ID;var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);};if(document.readyState==='complete'){l();}else if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})();
 </script>
+
 </body>
 </html>
