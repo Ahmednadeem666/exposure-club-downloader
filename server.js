@@ -1407,6 +1407,20 @@ app.get('/api/links/stats', async (req, res) => {
       clicks.forEach((c) => { const k = c[key] || 'unknown'; m[k] = (m[k] || 0) + 1; });
       return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ k, v }));
     };
+    // precise handset label, derived from what we already store (no migration needed)
+    const handset = (c) => {
+      if (c.os === 'ios') return c.device === 'tablet' ? 'iPad' : 'iPhone';
+      if (c.os === 'android') return c.device === 'tablet' ? 'Android tablet' : 'Android phone';
+      if (c.device === 'desktop') return 'Desktop';
+      return 'Other';
+    };
+    const byHandsetMap = {};
+    clicks.forEach((c) => { const k = handset(c); byHandsetMap[k] = (byHandsetMap[k] || 0) + 1; });
+    const byHandset = Object.entries(byHandsetMap).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ k, v }));
+    // when clicks actually land (viewer's browser converts to local time)
+    const hours = new Array(24).fill(0);
+    clicks.forEach((c) => { const h = new Date(c.created_at).getUTCHours(); hours[h]++; });
+    const byHour = hours.map((v, i) => ({ k: i, v }));
     // clicks per day, oldest → newest
     const byDay = {};
     for (let i = days - 1; i >= 0; i--) byDay[new Date(Date.now() - i * 86400000).toISOString().slice(0, 10)] = 0;
@@ -1420,6 +1434,9 @@ app.get('/api/links/stats', async (req, res) => {
       byOs: tally('os'),
       byDevice: tally('device'),
       byCountry: tally('country').slice(0, 12),
+      byHandset,
+      byHour,
+      lastClickAt: clicks.length ? clicks[0].created_at : null,
     });
   } catch (e) {
     console.error('stats error:', e);
