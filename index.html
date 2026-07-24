@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Exposure Club · Toolkit</title>
+<title>Xposure Lab · Toolkit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -419,6 +419,18 @@
   #lb-change::placeholder{color:var(--muted);opacity:.55}
   .lb-btn#lb-select.on{background:rgba(229,57,44,.14);border-color:var(--red);color:var(--red-bright)}
   .lb-frame.selecting{cursor:crosshair}
+  .lb-attach{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .lb-attach-name{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--red-bright)}
+  .lb-attach-name b{cursor:pointer;color:var(--muted);margin-left:6px}
+  .lb-attach-name b:hover{color:var(--red-bright)}
+  .lb-dev{display:flex;gap:3px;flex:none;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:2px}
+  .lb-dev-b{background:none;border:none;color:var(--muted);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:13px;line-height:1}
+  .lb-dev-b.on{background:rgba(229,57,44,.14);color:var(--red-bright)}
+  .lb-stage{background:#0b0708;display:flex;justify-content:center;transition:padding .2s}
+  .lb-stage.mobile{padding:18px 0}
+  .lb-stage.mobile .lb-frame{width:390px;max-width:92%;height:680px;border-radius:22px;
+    border:8px solid #1b1214;box-shadow:0 18px 50px rgba(0,0,0,.55)}
+  @media(max-width:640px){ .lb-stage.mobile .lb-frame{height:560px} }
   .lb-deploy-help{display:none;margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
   .lb-deploy-help.show{display:block;animation:lbIn .3s ease forwards}
   .lb-deploy-help b{color:var(--red-bright);display:block;margin-bottom:10px;font-size:14.5px}
@@ -457,6 +469,40 @@
     font-family:'JetBrains Mono',monospace;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
   .lk-mini:hover{border-color:var(--red);color:var(--red-bright)}
   .lk-mini.on{border-color:var(--red);color:var(--red-bright);background:rgba(229,57,44,.08)}
+
+  /* line chart */
+  .lkc{width:100%;height:200px;display:block;overflow:visible}
+  .lkc-grid{stroke:rgba(255,255,255,.07);stroke-width:1;stroke-dasharray:4 5}
+  .lkc-line{fill:none;stroke:url(#lkcLine);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;
+    filter:drop-shadow(0 0 6px rgba(229,57,44,.45))}
+  .lkc-end{fill:#FF574C;stroke:#0B0708;stroke-width:2}
+  .lkc-ylab{fill:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;text-anchor:end}
+  .lkc-xlab{fill:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px}
+  .lkc-hit{fill:transparent;cursor:pointer}
+  .lkc-hit:hover{fill:rgba(255,87,76,.25)}
+  /* live pill */
+  .lk-live{float:right;display:inline-flex;align-items:center;gap:6px;color:var(--red-bright);
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+  .lk-live i{width:7px;height:7px;border-radius:50%;background:var(--red-bright);animation:lkPulse 1.6s ease-in-out infinite}
+  @keyframes lkPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,87,76,.6)}50%{opacity:.55;box-shadow:0 0 0 6px rgba(255,87,76,0)}}
+  .lk-card.bump{animation:lkBump .7s ease}
+  @keyframes lkBump{0%{transform:scale(1)}30%{transform:scale(1.04);border-color:var(--red-bright)}100%{transform:scale(1)}}
+  .lk-delta{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--red-bright);font-style:normal;margin-left:8px;
+    animation:lkFade 2.4s ease forwards}
+  @keyframes lkFade{0%{opacity:1}70%{opacity:1}100%{opacity:0}}
+  /* hour chart */
+  .lk-hours{display:flex;align-items:flex-end;gap:2px;height:86px}
+  .lk-hr{flex:1;height:100%;display:flex;align-items:flex-end}
+  .lk-hr-b{width:100%;background:linear-gradient(180deg,var(--red-bright),var(--red));border-radius:2px 2px 0 0;
+    position:relative;min-height:2px}
+  .lk-hr-b:hover{filter:brightness(1.35)}
+  .lk-hr-b .lk-tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+    background:var(--bg-soft);border:1px solid var(--line);border-radius:6px;padding:3px 7px;white-space:nowrap;
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);z-index:3}
+  .lk-hr-b:hover .lk-tip{display:block}
+  .lk-hr-ticks{display:flex;justify-content:space-between;margin-top:8px;
+    font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+  .lk-bar-k{width:120px}
   .lk-filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
   .lk-select{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:9px;
     padding:9px 13px;font-family:'Archivo',sans-serif;font-size:13.5px;cursor:pointer;outline:none}
@@ -485,6 +531,49 @@
   .lk-bar-v{width:40px;flex:none;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text)}
   .lk-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   @media(max-width:640px){ .lk-cards{grid-template-columns:1fr} .lk-grid2{grid-template-columns:1fr} }
+
+  /* ===== mobile pass ===== */
+  @media(max-width:640px){
+    .content{padding:16px 14px 40px}
+    .glitch{font-size:clamp(38px,11vw,60px);gap:.2em}
+    .dash-title{font-size:clamp(26px,8vw,36px)}
+    .sub{font-size:15px;max-width:none}
+    .tools-grid{grid-template-columns:1fr;gap:14px}
+    .tool{padding:20px}
+    .topbar2{padding:10px 14px;gap:8px}
+    .tb-credits{font-size:12px;padding:5px 10px}
+    .tb-buy{font-size:12px;padding:7px 12px}
+    .lb-toolbar{gap:8px;padding:10px}
+    .lb-actions{flex-wrap:wrap;gap:6px;width:100%}
+    .lb-btn{flex:1;min-width:0;padding:8px 6px;font-size:11.5px;text-align:center}
+    .lb-dev{order:-1}
+    .lb-refine-row{flex-direction:column}
+    .lb-refine-row .lb-btn{width:100%;flex:none}
+    .lk-item{gap:10px}
+    .lk-main{min-width:100%}
+    .lk-clicks{min-width:52px;text-align:left}
+    .lk-acts{flex:1;justify-content:flex-end}
+    .ag-msg{max-width:94%;font-size:14px}
+    .ag-bar{flex-wrap:wrap}
+    .starter-chip{font-size:12px;padding:8px 12px}
+    .pl-add{padding-left:0;flex-direction:column}
+    .pl-add-btn{width:100%}
+    .pl-head{flex-wrap:wrap}
+    .cost-badge{font-size:11px}
+    .redeem .row{flex-direction:column}
+    .redeem button{padding:14px 0}
+    .lp-hero h1{font-size:clamp(32px,10vw,52px)}
+    .lp-nav{max-width:100%;margin:10px 12px 0;padding:8px 8px 8px 14px;gap:8px}
+    .lp-nav-btns{gap:6px}
+    .lp-price-link{display:none}
+    .lp-big,.lp-ghost{width:100%;padding:15px 20px}
+    .lp-hero-btns{flex-direction:column;width:100%}
+    footer{flex-direction:column;gap:8px;text-align:center}
+  }
+  @media(max-width:400px){
+    .lb-actions{gap:5px}
+    .glitch{font-size:34px}
+  }
 
   .stage{margin-top:26px}
   .card{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
@@ -584,6 +673,7 @@
   .lp-shot{margin:56px auto 0;max-width:1000px;border:1px solid var(--line);border-radius:16px;overflow:hidden;
     background:var(--card);box-shadow:0 30px 80px rgba(0,0,0,.5),0 0 60px rgba(229,57,44,.06);position:relative}
   .lp-shot img{display:block;width:100%;height:auto}
+  .lp-shot-ph b{color:var(--red-bright)}
   .lp-shot-ph{display:none;padding:80px 20px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted)}
   .lp-shot.lp-shot-empty img{display:none}
   .lp-shot.lp-shot-empty .lp-shot-ph{display:block}
@@ -733,7 +823,7 @@
     <div class="lp-glow"></div>
     <div class="lp-inner">
       <nav class="lp-nav">
-        <div class="brand"><span class="ec-logo" role="img" aria-label="Exposure Club"></span><span class="name">Exposure Club</span></div>
+        <div class="brand"><span class="ec-logo" role="img" aria-label="Xposure Lab"></span><span class="name">Xposure Lab</span></div>
         <div class="lp-nav-btns">
           <a class="lp-price-link" href="/pricing.html">Pricing</a>
           <button class="lp-login" id="lp-login">Log In</button>
@@ -764,8 +854,8 @@
         </div>
 
         <div class="lp-shot">
-          <img id="lp-shot-img" src="dashboard.png" alt="Exposure Club dashboard preview" onerror="this.parentElement.classList.add('lp-shot-empty')" />
-          <div class="lp-shot-ph">your dashboard preview</div>
+          <img id="lp-shot-img" alt="Xposure Lab dashboard preview" />
+          <div class="lp-shot-ph">add <b>dashboard.png</b> next to index.html in your repo to show a preview here</div>
         </div>
       </header>
 
@@ -785,32 +875,12 @@
         <div class="lp-tools" id="lp-tools"></div>
       </section>
 
-      <section class="lp-section lp-reviews">
-        <div class="lp-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <h2>Members <span class="r">love it.</span></h2>
-        <div class="lp-review-grid">
-          <!-- REPLACE these with real member quotes. Keep the structure, swap the text/name/role. -->
-          <div class="lp-review">
-            <div class="lp-review-head"><span class="lp-review-ava">M</span><div><b>Member name</b><span>Exposure Club</span></div></div>
-            <p>Your real member quote goes here &#8212; swap this text out.</p>
-          </div>
-          <div class="lp-review">
-            <div class="lp-review-head"><span class="lp-review-ava">M</span><div><b>Member name</b><span>Exposure Club</span></div></div>
-            <p>Another real quote from a member goes here.</p>
-          </div>
-          <div class="lp-review">
-            <div class="lp-review-head"><span class="lp-review-ava">M</span><div><b>Member name</b><span>Exposure Club</span></div></div>
-            <p>A third real member quote goes here.</p>
-          </div>
-        </div>
-      </section>
-
       <section class="lp-section lp-faq-section">
         <h2>Frequently Asked <span class="r">Questions</span></h2>
         <p class="lp-lead">Everything you need to know before joining.</p>
         <div class="lp-faq">
           <div class="lp-faq-item">
-            <button class="lp-faq-q">What is Exposure Club Marketing Tools?<span class="lp-faq-ic">&#8964;</span></button>
+            <button class="lp-faq-q">What is Xposure Lab?<span class="lp-faq-ic">&#8964;</span></button>
             <div class="lp-faq-a">It's an AI-powered suite for TikTok organic marketers &#8212; hooks, UGC scripts, a chat strategist, and content planning, all sharing one login and one credit wallet. Plus a free video downloader.</div>
           </div>
           <div class="lp-faq-item">
@@ -844,7 +914,7 @@
 
       <div class="lp-foot">
         <div style="margin-bottom:10px"><a href="/pricing.html" style="color:#B9ABAD;text-decoration:underline;margin:0 10px">Pricing</a><a href="/terms.html" style="color:#B9ABAD;text-decoration:underline;margin:0 10px">Terms of Service</a><a href="/privacy.html" style="color:#B9ABAD;text-decoration:underline;margin:0 10px">Privacy Policy</a><a href="/refund.html" style="color:#B9ABAD;text-decoration:underline;margin:0 10px">Refund Policy</a></div>
-        &copy; Exposure Club &#183; Marketing Tools
+        &copy; Xposure Lab &#183; Marketing Tools
       </div>
     </div>
   </div>
@@ -854,8 +924,8 @@
     <div class="emoji-bg emoji-bg-screen" id="emoji-bg-gate" aria-hidden="true"></div>
     <button class="lp-login" id="auth-back" style="position:absolute;top:24px;left:24px">&#8592; home</button>
     <div class="gate-inner">
-      <span class="ec-logo auth-logo" role="img" aria-label="Exposure Club"></span>
-      <h1 class="glitch gate-mark" id="gate-mark">EC<span class="dot-red">.</span></h1>
+      <span class="ec-logo auth-logo" role="img" aria-label="Xposure Lab"></span>
+      <h1 class="glitch gate-mark" id="gate-mark">XL<span class="dot-red">.</span></h1>
       <div class="wordmark-tag">Marketing Tools</div>
       <p class="gate-sub" id="auth-sub">log in to open your toolkit.</p>
       <form id="auth-form" autocomplete="on">
@@ -885,7 +955,7 @@
 
   <div class="gate hide" id="reset-gate">
     <div class="gate-inner">
-      <h1 class="glitch gate-mark" id="reset-mark">EC<span class="dot-red">.</span></h1>
+      <h1 class="glitch gate-mark" id="reset-mark">XL<span class="dot-red">.</span></h1>
       <p class="gate-sub" id="reset-sub">set a new password.</p>
       <form id="reset-form" autocomplete="on">
         <div class="field auth-field"><input id="reset-pass" type="password" placeholder="new password&#8230;" aria-label="New password" autocomplete="new-password" /></div>
@@ -904,8 +974,8 @@
     <div class="shell" id="shell" hidden>
       <aside class="sidebar" id="sidebar">
         <div class="sb-brand">
-          <span class="ec-logo" role="img" aria-label="Exposure Club"></span>
-          <span class="name">EC<span class="r">.</span></span>
+          <span class="ec-logo" role="img" aria-label="Xposure Lab"></span>
+          <span class="name">XL<span class="r">.</span></span>
         </div>
         <button class="sb-link active" data-nav="dashboard"><span class="sb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>Dashboard</button>
         <div class="sb-group">Tools</div>
@@ -1145,6 +1215,11 @@
             </button>
           </div>
         </div>
+        <div class="lb-attach">
+          <input type="file" id="lb-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
+          <button type="button" class="lb-btn" id="lb-attach-btn">&#128206; attach reference image</button>
+          <span class="lb-attach-name" id="lb-attach-name"></span>
+        </div>
         <div class="lb-styles" id="lb-styles">
           <button type="button" class="lb-style active" data-style="">auto</button>
           <button type="button" class="lb-style" data-style="bold, high-contrast, punchy">bold</button>
@@ -1170,6 +1245,7 @@
           <span class="lb-dots"><i></i><i></i><i></i></span>
           <span class="lb-url" id="lb-url">your-page.html</span>
           <span class="lb-actions">
+            <span class="lb-dev"><button class="lb-dev-b on" id="lb-dev-d" title="desktop">&#9633;</button><button class="lb-dev-b" id="lb-dev-m" title="mobile">&#9647;</button></span>
             <button class="lb-btn" id="lb-select">&#9678; select</button>
             <button class="lb-btn" id="lb-undo" disabled>undo</button>
             <button class="lb-btn" id="lb-copy">copy code</button>
@@ -1177,7 +1253,7 @@
             <button class="lb-btn" id="lb-deploy">host it &#8594;</button>
           </span>
         </div>
-        <iframe id="lb-frame" class="lb-frame" sandbox="allow-scripts" title="Landing page preview"></iframe>
+        <div class="lb-stage" id="lb-stage"><iframe id="lb-frame" class="lb-frame" sandbox="allow-scripts" title="Landing page preview"></iframe></div>
         <div class="lb-refine">
           <div class="lb-target" id="lb-target">Editing the <b>whole page</b> &#8212; or hit <b>select</b> and click any element in the preview.</div>
           <div class="lb-refine-row">
@@ -1244,8 +1320,8 @@
     </section>
 
     <footer>
-      <span>exposure club toolkit</span>
-      <span>powered by Exposure Club</span>
+      <span>xposure lab</span>
+      <span>powered by Xposure Lab</span>
     </footer>
         </div><!-- /.content -->
       </div><!-- /.main -->
@@ -1353,8 +1429,15 @@ function setUser(name){ if(!name){ userchip.hidden=true; return; } userName.text
   if(sbAva) sbAva.textContent=(name[0]||'?').toUpperCase();
 }
 
+const VIEWS=['dashboard','downloader','hookgen','ugc','advisor','planner','lander','links'];
+function viewFromHash(){
+  const m=/^#\/([a-z]+)$/.exec(location.hash||'');
+  return (m && VIEWS.includes(m[1])) ? m[1] : null;
+}
 function showView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  // keep the URL in sync so a refresh lands back on the same tool
+  try{ const want='#/'+name; if(location.hash!==want) history.replaceState(null,'',want); }catch(_){}
   const v=$('view-'+name); if(v) v.classList.add('active');
   // sidebar active state
   document.querySelectorAll('.sb-link').forEach(l=>l.classList.toggle('active', l.dataset.nav===name));
@@ -1368,7 +1451,7 @@ function showView(name){
   if(name==='advisor' && adQuestion) setTimeout(()=>adQuestion.focus(),120);
   if(name==='planner'){ if(plTopic) setTimeout(()=>plTopic.focus(),120); loadPlans(); }
   if(name==='lander' && lbBrief) setTimeout(()=>lbBrief.focus(),120);
-  if(name==='links'){ if(lkDest) setTimeout(()=>lkDest.focus(),120); lkLoad(); lkLoadStats(); }
+  if(name==='links'){ if(lkDest) setTimeout(()=>lkDest.focus(),120); lkLastTotal=null; lkLoad(); lkLoadStats(); lkStartLive(); } else { if(typeof lkStopLive==='function') lkStopLive(); }
 }
 function enterHub(){ hideLanding(); gate.classList.add('hide'); topbar.hidden=false; showView('dashboard'); checkUnlock(); identifyIntercom(); }
 
@@ -1404,7 +1487,8 @@ function showAuth(){ hideLanding(); gate.classList.remove('hide'); topbar.hidden
 
 // ---- landing ----
 const landing=$('landing');
-function showLanding(){ landing.classList.remove('hide'); gate.classList.add('hide'); topbar.hidden=true; renderLandingTools(); }
+function showLanding(){ try{ if(viewFromHash()) history.replaceState(null,'',location.pathname+location.search); }catch(_){}
+  landing.classList.remove('hide'); gate.classList.add('hide'); topbar.hidden=true; renderLandingTools(); }
 function hideLanding(){ landing.classList.add('hide'); }
 function goAuth(wantMode){
   if(mode!==wantMode) toggleMode();     // set login vs signup
@@ -2111,7 +2195,7 @@ lbForm&&lbForm.addEventListener('submit', async (e)=>{
   try{
     if(DEMO){ throw new Error('the builder works on the live site.'); }
     const token=session&&session.access_token;
-    const r=await fetch('/api/lander',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({brief,style:lbStyle})});
+    const r=await fetch('/api/lander',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({brief,style:lbStyle,image:lbImage})});
     if(!r.ok){ let m='couldn\u2019t build it. try again.'; let code=r.status; try{ m=(await r.json()).error||m; }catch(_){} const er=new Error(m); er.code=code; throw er; }
     const data=await r.json();
     if(data.creditsLeft!=null) setCredits(data.creditsLeft); else await refreshBalance();
@@ -2128,6 +2212,11 @@ lbForm&&lbForm.addEventListener('submit', async (e)=>{
 const LB_PICKER = `<script>(function(){
 var on=false,last=null;
 function clear(){ if(last){ last.style.outline=''; last.style.outlineOffset=''; last=null; } }
+document.addEventListener('click',function(e){
+  var a=e.target.closest?e.target.closest('a'):null;
+  if(a){ e.preventDefault(); e.stopPropagation(); }
+},true);
+document.addEventListener('submit',function(e){ e.preventDefault(); },true);
 document.addEventListener('mouseover',function(e){ if(!on) return; clear(); last=e.target;
   last.style.outline='2px solid #FF574C'; last.style.outlineOffset='1px'; },true);
 document.addEventListener('mouseout',function(){ if(on) clear(); },true);
@@ -2203,10 +2292,30 @@ async function lbApplyChange(){
     const token=session&&session.access_token;
     const r=await fetch('/api/lander/refine',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({html:lbHtml,instruction,target})});
     if(!r.ok){ let m='couldn\u2019t apply that. try again.'; let code=r.status; try{ m=(await r.json()).error||m; }catch(_){} const er=new Error(m); er.code=code; throw er; }
-    const data=await r.json();
-    if(data.creditsLeft!=null) setCredits(data.creditsLeft); else await refreshBalance();
+
+    // streamed: progress pings, then a final payload
+    let outHtml=null, sErr=null;
+    const reader=r.body.getReader(), dec=new TextDecoder(); let buf='';
+    while(true){
+      const {value,done}=await reader.read(); if(done) break;
+      buf+=dec.decode(value,{stream:true});
+      let i;
+      while((i=buf.indexOf('\n\n'))>=0){
+        const chunk=buf.slice(0,i).trim(); buf=buf.slice(i+2);
+        if(!chunk.startsWith('data:')) continue;
+        let o; try{ o=JSON.parse(chunk.slice(5).trim()); }catch(_){ continue; }
+        if(o.error){ sErr=o.error; continue; }
+        if(o.n){ lbBarFill.style.width = Math.min(92, 20 + (o.n/220)) + '%'; continue; }
+        if(o.done){
+          outHtml=o.html||null;
+          if(o.creditsLeft!=null) setCredits(o.creditsLeft); else await refreshBalance();
+        }
+      }
+    }
+    if(sErr) throw new Error(sErr);
+    if(!outHtml) throw new Error('couldn\u2019t apply that. try again.');
     lbPrev=lbHtml;                       // one-step undo
-    lbHtml=data.html||lbHtml;
+    lbHtml=outHtml;
     $('lb-undo').disabled=false;
     $('lb-change').value='';
     lbBarFill.style.width='100%';
@@ -2219,6 +2328,31 @@ async function lbApplyChange(){
 }
 $('lb-apply')&&$('lb-apply').addEventListener('click', lbApplyChange);
 $('lb-change')&&$('lb-change').addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); lbApplyChange(); } });
+
+// reference image
+let lbImage=null;
+$('lb-attach-btn')&&$('lb-attach-btn').addEventListener('click',()=>$('lb-file').click());
+$('lb-file')&&$('lb-file').addEventListener('change',(e)=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  if(f.size > 5*1024*1024){ showErr($('lb-err'),'image is too big — keep it under 5MB.'); e.target.value=''; return; }
+  const rd=new FileReader();
+  rd.onload=()=>{
+    lbImage={ media_type:f.type, data:String(rd.result).split(',')[1] };
+    $('lb-attach-name').innerHTML=agEsc(f.name)+' <b title="remove">&#10005;</b>';
+    $('lb-attach-name').querySelector('b').addEventListener('click',lbClearImage);
+  };
+  rd.readAsDataURL(f);
+});
+function lbClearImage(){ lbImage=null; $('lb-file').value=''; $('lb-attach-name').textContent=''; }
+
+// desktop / mobile preview
+function lbSetDevice(m){
+  $('lb-stage').classList.toggle('mobile', m==='mobile');
+  $('lb-dev-d').classList.toggle('on', m!=='mobile');
+  $('lb-dev-m').classList.toggle('on', m==='mobile');
+}
+$('lb-dev-d')&&$('lb-dev-d').addEventListener('click',()=>lbSetDevice('desktop'));
+$('lb-dev-m')&&$('lb-dev-m').addEventListener('click',()=>lbSetDevice('mobile'));
 
 function lbRenderPage(){
   if(!lbHtml) return;
@@ -2339,10 +2473,10 @@ function lkRender(){
   }));
 }
 
-async function lkLoadStats(){
+async function lkLoadStats(quiet){
   if(DEMO){ lkStatsBox.innerHTML='<div class="pl-empty">analytics show on the live site.</div>'; return; }
   const days=$('lk-f-days').value, linkId=$('lk-f-link').value;
-  lkStatsBox.innerHTML='<div class="hg-loading"><span class="hg-spin"></span>loading analytics&#8230;</div>';
+  if(!quiet) lkStatsBox.innerHTML='<div class="hg-loading"><span class="hg-spin"></span>loading analytics&#8230;</div>';
   try{
     const q='?days='+encodeURIComponent(days)+(linkId?'&linkId='+encodeURIComponent(linkId):'');
     const r=await fetch('/api/links/stats'+q,{headers:{'Authorization':'Bearer '+(lkToken()||'')}});
@@ -2353,31 +2487,118 @@ async function lkLoadStats(){
 $('lk-f-days')&&$('lk-f-days').addEventListener('change', lkLoadStats);
 $('lk-f-link')&&$('lk-f-link').addEventListener('change', lkLoadStats);
 
-function lkBars(title, rows){
+function lkBars(title, rows, deco){
   if(!rows||!rows.length) return '<div class="lk-panel"><h4>'+title+'</h4><div class="pl-empty" style="padding:6px">no data yet</div></div>';
   const max=Math.max.apply(null, rows.map(r=>r.v))||1;
-  return '<div class="lk-panel"><h4>'+title+'</h4><div class="lk-bars">'+rows.map(r=>
-    '<div class="lk-bar-row"><span class="lk-bar-k">'+lkEsc(r.k)+'</span>'
-    +'<span class="lk-bar-t"><span class="lk-bar-f" style="width:'+Math.max(3,(r.v/max)*100)+'%"></span></span>'
-    +'<span class="lk-bar-v">'+r.v+'</span></div>').join('')+'</div></div>';
+  return '<div class="lk-panel"><h4>'+title+'</h4><div class="lk-bars">'+rows.map(r=>{
+    const label=(deco?deco(r.k)+' ':'')+lkEsc(lkLabelFor(r.k));
+    return '<div class="lk-bar-row"><span class="lk-bar-k">'+label+'</span>'
+      +'<span class="lk-bar-t"><span class="lk-bar-f" style="width:'+Math.max(3,(r.v/max)*100)+'%"></span></span>'
+      +'<span class="lk-bar-v">'+r.v+'</span></div>';
+  }).join('')+'</div></div>';
 }
 
+// ---- emoji helpers ----
+function lkFlag(cc){
+  if(!cc || !/^[A-Za-z]{2}$/.test(cc)) return '\u{1F310}';
+  return String.fromCodePoint.apply(null, cc.toUpperCase().split('').map(c=>0x1F1E6 + c.charCodeAt(0) - 65));
+}
+const LK_APP_EMOJI={tiktok:'\u{1F3B5}',instagram:'\u{1F4F8}',facebook:'\u{1F465}',snapchat:'\u{1F47B}',other:'\u{1F310}',none:'\u{1F517}',unknown:'\u2753'};
+const LK_DEV_EMOJI={'iPhone':'\u{1F4F1}','iPad':'\u{1F4F2}','Android phone':'\u{1F4F1}','Android tablet':'\u{1F4F2}','Desktop':'\u{1F5A5}\uFE0F','Other':'\u2753',
+  mobile:'\u{1F4F1}',tablet:'\u{1F4F2}',desktop:'\u{1F5A5}\uFE0F',ios:'\u{1F34E}',android:'\u{1F916}',unknown:'\u2753'};
+function lkLabelFor(k){ return k==='none' ? 'direct / browser' : k; }
+function lkAppDeco(k){ return LK_APP_EMOJI[k]||LK_APP_EMOJI.unknown; }
+function lkDevDeco(k){ return LK_DEV_EMOJI[k]||LK_DEV_EMOJI.unknown; }
+
+// ---- smooth line chart, red gradient fill ----
+function lkLineChart(rows){
+  if(!rows||!rows.length) return '<div class="pl-empty">no clicks yet</div>';
+  const W=760,H=200,PL=36,PR=12,PT=16,PB=30, n=rows.length;
+  const peak=Math.max.apply(null, rows.map(r=>r.v));
+  const ceil = peak<=4 ? 5 : Math.ceil(peak/5)*5;
+  const X=(i)=> PL + (n===1?0:(i/(n-1))*(W-PL-PR));
+  const Y=(v)=> PT + (1 - v/ceil)*(H-PT-PB);
+  const pts=rows.map((r,i)=>[X(i),Y(r.v)]);
+
+  let d='M'+pts[0][0].toFixed(1)+','+pts[0][1].toFixed(1);
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
+    const c1x=p1[0]+(p2[0]-p0[0])/6, c1y=p1[1]+(p2[1]-p0[1])/6;
+    const c2x=p2[0]-(p3[0]-p1[0])/6, c2y=p2[1]-(p3[1]-p1[1])/6;
+    d+=' C'+c1x.toFixed(1)+','+c1y.toFixed(1)+' '+c2x.toFixed(1)+','+c2y.toFixed(1)+' '+p2[0].toFixed(1)+','+p2[1].toFixed(1);
+  }
+  const area=d+' L'+X(n-1).toFixed(1)+','+(H-PB)+' L'+X(0).toFixed(1)+','+(H-PB)+' Z';
+
+  let grid='', i;
+  for(i=0;i<=4;i++){
+    const v=ceil*(i/4), yy=Y(v);
+    grid+='<line x1="'+PL+'" y1="'+yy.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+yy.toFixed(1)+'" class="lkc-grid"/>'
+       +'<text x="'+(PL-8)+'" y="'+(yy+4).toFixed(1)+'" class="lkc-ylab">'+Math.round(v)+'</text>';
+  }
+  const step=Math.max(1,Math.floor((n-1)/3));
+  let xlab='';
+  for(i=0;i<n;i+=step){
+    const dt=new Date(rows[i].k+'T00:00:00');
+    const t=dt.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+    xlab+='<text x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" class="lkc-xlab" text-anchor="'+(i===0?'start':'middle')+'">'+t+'</text>';
+  }
+  const dots=rows.map((r,idx)=>'<circle cx="'+X(idx).toFixed(1)+'" cy="'+Y(r.v).toFixed(1)+'" r="9" class="lkc-hit"><title>'+r.k+' \u00b7 '+r.v+' click'+(r.v===1?'':'s')+'</title></circle>').join('');
+
+  return '<svg class="lkc" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" aria-label="clicks per day">'
+    +'<defs><linearGradient id="lkcFill" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0%" stop-color="#FF574C" stop-opacity=".38"/>'
+    +'<stop offset="100%" stop-color="#E5392C" stop-opacity="0"/></linearGradient>'
+    +'<linearGradient id="lkcLine" x1="0" y1="0" x2="1" y2="0">'
+    +'<stop offset="0%" stop-color="#E5392C"/><stop offset="100%" stop-color="#FF574C"/></linearGradient></defs>'
+    +grid
+    +'<path d="'+area+'" fill="url(#lkcFill)"/>'
+    +'<path d="'+d+'" class="lkc-line"/>'
+    +'<circle cx="'+X(n-1).toFixed(1)+'" cy="'+Y(rows[n-1].v).toFixed(1)+'" r="4.5" class="lkc-end"/>'
+    +dots+xlab+'</svg>';
+}
+
+// ---- hour-of-day (the honest stand-in for "age": when clicks actually land) ----
+function lkHourChart(rows){
+  if(!rows||!rows.length) return '';
+  const max=Math.max.apply(null, rows.map(r=>r.v))||1;
+  const bars=rows.map(r=>{
+    const h=r.k, lab=(h===0?'12a':h<12?h+'a':h===12?'12p':(h-12)+'p');
+    return '<div class="lk-hr"><div class="lk-hr-b" style="height:'+Math.max(2,(r.v/max)*100)+'%"><span class="lk-tip">'+lab+' \u00b7 '+r.v+'</span></div></div>';
+  }).join('');
+  const ticks=[0,6,12,18].map(h=>'<span>'+(h===0?'12am':h===12?'12pm':h<12?h+'am':(h-12)+'pm')+'</span>').join('');
+  return '<div class="lk-panel"><h4>when clicks land (UTC)</h4><div class="lk-hours">'+bars+'</div><div class="lk-hr-ticks">'+ticks+'</div></div>';
+}
+
+let lkLastTotal=null;
 function lkRenderStats(d){
   const rate = d.total ? Math.round((d.escaped/d.total)*100) : 0;
-  const maxDay = Math.max.apply(null, (d.byDay||[]).map(x=>x.v)) || 1;
-  const daysHtml = (d.byDay||[]).map(x=>
-    '<div class="lk-day" style="height:'+Math.max(2,(x.v/maxDay)*100)+'%"><span class="lk-tip">'+x.k+' &#183; '+x.v+'</span></div>').join('');
+  const bumped = (lkLastTotal!=null && d.total>lkLastTotal);
+  const delta = bumped ? (d.total-lkLastTotal) : 0;
+  lkLastTotal = d.total;
 
   lkStatsBox.innerHTML =
     '<div class="lk-cards">'
-    +'<div class="lk-card"><b>'+d.total+'</b><span>total clicks</span></div>'
+    +'<div class="lk-card'+(bumped?' bump':'')+'"><b>'+d.total+(bumped?'<i class="lk-delta">+'+delta+'</i>':'')+'</b><span>total clicks</span></div>'
     +'<div class="lk-card"><b>'+d.escaped+'</b><span>escaped in-app</span></div>'
     +'<div class="lk-card"><b>'+rate+'%</b><span>escape rate</span></div>'
     +'</div>'
-    +'<div class="lk-panel"><h4>clicks per day</h4><div class="lk-days">'+daysHtml+'</div></div>'
-    +'<div class="lk-grid2">'+lkBars('traffic source', d.byApp)+lkBars('operating system', d.byOs)+'</div>'
-    +'<div class="lk-grid2">'+lkBars('device', d.byDevice)+lkBars('country', d.byCountry)+'</div>';
+    +'<div class="lk-panel"><h4>clicks per day <span class="lk-live" id="lk-live"><i></i>live</span></h4>'+lkLineChart(d.byDay)+'</div>'
+    +'<div class="lk-grid2">'+lkBars('traffic source', d.byApp, lkAppDeco)+lkBars('device', d.byHandset||d.byDevice, lkDevDeco)+'</div>'
+    +'<div class="lk-grid2">'+lkBars('country', d.byCountry, lkFlag)+lkHourChart(d.byHour)+'</div>';
 }
+
+// ---- live polling while the Links view is open ----
+let lkPoll=null;
+function lkStartLive(){
+  clearInterval(lkPoll);
+  lkPoll=setInterval(()=>{
+    const view=$('view-links');
+    if(!view||!view.classList.contains('active')||document.hidden) return;
+    lkLoadStats(true);
+    lkLoad();
+  }, 9000);
+}
+function lkStopLive(){ clearInterval(lkPoll); lkPoll=null; }
 
 let balanceBeforeCheckout=null;   // snapshot taken when checkout opens
 function initPaddle(){
@@ -2564,6 +2785,24 @@ resetForm.addEventListener('submit', async (e)=>{
     if(mEl) mEl.textContent=pad(m); if(sEl) sEl.textContent=pad(s);
   }
   tick(); setInterval(tick,1000);
+})();
+
+window.addEventListener('hashchange',()=>{ if(!session) return; const v=viewFromHash(); if(v) showView(v); });
+
+// ---- landing screenshot: try the usual filenames before giving up ----
+(function shotLoader(){
+  const img=document.getElementById('lp-shot-img'); if(!img) return;
+  const wrap=img.parentElement;
+  const tries=['/dashboard.png','/dashboard.jpg','/dashboard.jpeg','/dashboard.webp',
+               '/dashboard.PNG','/Dashboard.png','/public/dashboard.png','dashboard.png'];
+  let i=0;
+  function next(){
+    if(i>=tries.length){ wrap.classList.add('lp-shot-empty'); return; }
+    img.src=tries[i++];
+  }
+  img.addEventListener('error', next);
+  img.addEventListener('load', ()=>wrap.classList.remove('lp-shot-empty'));
+  next();
 })();
 
 renderTools();
