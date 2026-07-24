@@ -50,6 +50,9 @@
 
   /* ===== AffRev-style app shell: sidebar + main ===== */
   .shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+  /* the class sets display, which beats the browser's [hidden] rule — restore it
+     so shell.hidden actually hides the dashboard behind the landing/auth overlays */
+  .shell[hidden]{display:none}
   .sidebar{position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--card);border-right:1px solid var(--line);
     display:flex;flex-direction:column;padding:18px 14px;gap:6px}
   .sb-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 16px;border-bottom:1px solid var(--line-soft);margin-bottom:10px}
@@ -141,6 +144,43 @@
     font-size:clamp(52px,11vw,92px);color:var(--text)}
   .dash-title .r{color:var(--red)}
   .dash-sub{max-width:46ch;margin:18px auto 0;color:var(--muted);font-size:clamp(15px,3.6vw,17px)}
+
+  /* ===== dashboard home ===== */
+  .dash-welcome{margin:4px 0 26px}
+  .dash-welcome .dash-title{font-size:clamp(28px,4vw,40px);text-align:left}
+  .dash-who{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--red-bright);margin-top:6px}
+  .dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:30px}
+  .dash-stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+  .ds-k{display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .ds-v{font-family:'Anton',sans-serif;font-size:30px;line-height:1;color:var(--text);font-weight:400}
+  .ds-v small{font-family:'Archivo',sans-serif;font-size:14px;color:var(--muted);font-weight:600;margin-left:4px}
+  .dash-sec{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 14px}
+  .quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:30px}
+  .quick{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;cursor:pointer;
+    display:flex;align-items:center;gap:13px;transition:border-color .15s,background .15s;text-align:left}
+  .quick:hover{border-color:var(--red);background:rgba(229,57,44,.06)}
+  .quick .q-ic{width:38px;height:38px;flex:none;border-radius:10px;border:1px solid var(--line);color:var(--red);
+    display:flex;align-items:center;justify-content:center;background:var(--bg-soft)}
+  .quick .q-ic svg{width:19px;height:19px}
+  .quick b{display:block;font-size:14.5px;color:var(--text);font-weight:700}
+  .quick span{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
+  .upsell{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    background:linear-gradient(100deg,rgba(229,57,44,.14),rgba(229,57,44,.03));
+    border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;margin-bottom:30px}
+  .upsell.low{border-color:var(--red)}
+  .upsell-txt b{display:block;font-size:16px;margin-bottom:4px}
+  .upsell-txt p{color:var(--muted);font-size:13.5px}
+  .upsell-btn{flex:none;background:linear-gradient(180deg,var(--red-bright),var(--red));color:#fff;border:none;
+    border-radius:10px;padding:12px 22px;font-family:'Archivo',sans-serif;font-weight:800;font-size:14px;cursor:pointer;transition:filter .15s}
+  .upsell-btn:hover{filter:brightness(1.08)}
+  @media(max-width:640px){
+    .dash-stats{grid-template-columns:1fr;gap:10px}
+    .quick-grid{grid-template-columns:1fr}
+    .upsell{flex-direction:column;align-items:flex-start}
+    .upsell-btn{width:100%}
+  }
 
   /* redeem box */
   .redeem{max-width:440px;margin:34px auto 40px;text-align:center}
@@ -1004,13 +1044,32 @@
 
     <!-- DASHBOARD -->
     <section class="view active" id="view-dashboard">
-      <div class="dash-hero" style="margin-bottom:24px">
-        <h1 class="dash-title" style="font-size:clamp(28px,4vw,40px)">Dashboard</h1>
-        <p class="dash-sub">Every tool, one login, one credit wallet. Pick one and go.</p>
+      <div class="dash-welcome">
+        <h1 class="dash-title">Welcome back</h1>
+        <p class="dash-who" id="dash-who">&nbsp;</p>
       </div>
       <div class="lock-banner" id="lock-banner" style="display:none">
         &#128274; <b>Launching soon.</b> The tools are locked until launch day &#8212; you can look around, but generating is disabled for now.
       </div>
+
+      <div class="dash-stats" id="dash-stats">
+        <div class="dash-stat"><span class="ds-k">Credits left</span><b class="ds-v" id="ds-credits">&#8212;</b></div>
+        <div class="dash-stat"><span class="ds-k">Clicks today</span><b class="ds-v" id="ds-today">&#8212;</b></div>
+        <div class="dash-stat"><span class="ds-k">Top traffic</span><b class="ds-v" id="ds-country">&#8212;</b></div>
+      </div>
+
+      <div class="dash-sec">Quick access</div>
+      <div class="quick-grid" id="quick-grid"></div>
+
+      <div class="upsell" id="upsell">
+        <div class="upsell-txt">
+          <b id="upsell-title">Need more credits?</b>
+          <p id="upsell-sub">Top up with a one-time pack, or go monthly for the best rate.</p>
+        </div>
+        <button class="upsell-btn" id="upsell-btn">Buy credits</button>
+      </div>
+
+      <div class="dash-sec">All tools</div>
       <div class="tools-grid" id="tools-grid"></div>
 
       <div class="redeem">
@@ -1451,6 +1510,7 @@ function showView(name){
   if(name==='advisor' && adQuestion) setTimeout(()=>adQuestion.focus(),120);
   if(name==='planner'){ if(plTopic) setTimeout(()=>plTopic.focus(),120); loadPlans(); }
   if(name==='lander' && lbBrief) setTimeout(()=>lbBrief.focus(),120);
+  if(name==='dashboard') loadOverview();
   if(name==='links'){ if(lkDest) setTimeout(()=>lkDest.focus(),120); lkLastTotal=null; lkLoad(); lkLoadStats(); lkStartLive(); } else { if(typeof lkStopLive==='function') lkStopLive(); }
 }
 function enterHub(){ hideLanding(); gate.classList.add('hide'); topbar.hidden=false; showView('dashboard'); checkUnlock(); identifyIntercom(); }
@@ -2599,6 +2659,58 @@ function lkStartLive(){
   }, 9000);
 }
 function lkStopLive(){ clearInterval(lkPoll); lkPoll=null; }
+
+// ---- Dashboard home: welcome, live stats, quick access, credit upsell ----
+const QUICK_IDS = ['hookgen','ugc','advisor','links'];   // most-used tools
+
+function renderQuick(){
+  const host=$('quick-grid'); if(!host) return;
+  const items=QUICK_IDS.map(id=>TOOLS.find(t=>t.id===id)).filter(t=>t && t.status==='live');
+  host.innerHTML=items.map(t=>
+    '<button class="quick" data-q="'+t.id+'"><span class="q-ic">'+toolIcon(t.id)+'</span>'
+    +'<span><b>'+t.name+'</b><span>'+t.cost+' credit'+(t.cost>1?'s':'')+' / use</span></span></button>'
+  ).join('');
+  host.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.q)));
+}
+
+function setUpsell(credits){
+  const box=$('upsell'), title=$('upsell-title'), sub=$('upsell-sub'), btn=$('upsell-btn');
+  if(!box) return;
+  box.classList.remove('low');
+  if(credits===0){
+    box.classList.add('low');
+    title.textContent='Out of credits';
+    sub.textContent='Top up with a one-time pack, or go monthly for the best rate.';
+    btn.textContent='Buy credits';
+  } else if(credits!=null && credits<=20){
+    box.classList.add('low');
+    title.textContent='Running low \u2014 '+credits+' credit'+(credits===1?'':'s')+' left';
+    sub.textContent='Grab a pack before you run out mid-generation.';
+    btn.textContent='Top up';
+  } else {
+    title.textContent='Need more credits?';
+    sub.textContent='Top up with a one-time pack, or go monthly for the best rate.';
+    btn.textContent='Buy credits';
+  }
+}
+$('upsell-btn')&&$('upsell-btn').addEventListener('click',()=>openPricing&&openPricing());
+
+async function loadOverview(){
+  renderQuick();
+  if(DEMO) return;
+  try{
+    const token=session&&session.access_token;
+    const r=await fetch('/api/overview',{headers:{'Authorization':'Bearer '+(token||'')}});
+    if(!r.ok) return;
+    const d=await r.json();
+    if(d.username) $('dash-who').textContent='@'+d.username;
+    if(d.credits!=null){ $('ds-credits').innerHTML=d.credits+'<small>credits</small>'; setUpsell(d.credits); }
+    $('ds-today').innerHTML=(d.todayClicks||0)+'<small>clicks</small>';
+    $('ds-country').innerHTML = d.topCountry
+      ? (typeof lkFlag==='function'? lkFlag(d.topCountry):'')+' '+d.topCountry
+      : '\u2014';
+  }catch(_){}
+}
 
 let balanceBeforeCheckout=null;   // snapshot taken when checkout opens
 function initPaddle(){
