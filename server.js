@@ -1444,6 +1444,44 @@ app.get('/api/links/stats', async (req, res) => {
   }
 });
 
+// ---- Dashboard overview: one call for the home screen ----
+app.get('/api/overview', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'accounts not configured.' });
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'please log in.' });
+
+    const since7 = new Date(Date.now() - 7 * 86400000).toISOString();
+    const startOfDay = new Date(); startOfDay.setUTCHours(0, 0, 0, 0);
+
+    const [{ data: prof }, { data: links }, { data: clicks }] = await Promise.all([
+      supabase.from('profiles').select('credits, username').eq('id', user.id).single(),
+      supabase.from('links').select('id, active').eq('user_id', user.id),
+      supabase.from('clicks').select('created_at, country, escaped').eq('user_id', user.id).gte('created_at', since7).limit(20000),
+    ]);
+
+    const rows = clicks || [];
+    const today = rows.filter((c) => new Date(c.created_at) >= startOfDay).length;
+    const escaped = rows.filter((c) => c.escaped).length;
+    const cm = {};
+    rows.forEach((c) => { if (c.country) cm[c.country] = (cm[c.country] || 0) + 1; });
+    const top = Object.entries(cm).sort((a, b) => b[1] - a[1])[0] || null;
+
+    return res.json({
+      username: (prof && prof.username) || (user.user_metadata && user.user_metadata.username) || (user.email || '').split('@')[0],
+      credits: prof ? prof.credits : null,
+      todayClicks: today,
+      weekClicks: rows.length,
+      escapeRate: rows.length ? Math.round((escaped / rows.length) * 100) : 0,
+      topCountry: top ? top[0] : null,
+      activeLinks: (links || []).filter((l) => l.active).length,
+    });
+  } catch (e) {
+    console.error('overview error:', e);
+    return res.status(500).json({ error: 'something went wrong.' });
+  }
+});
+
 // Report whether the current user can use the tools (admin before launch, everyone after).
 app.get('/api/me', async (req, res) => {
   try {
