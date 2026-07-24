@@ -147,8 +147,15 @@
 
   /* ===== dashboard home ===== */
   .dash-welcome{margin:4px 0 26px}
-  .dash-welcome .dash-title{font-size:clamp(28px,4vw,40px);text-align:left}
-  .dash-who{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--red-bright);margin-top:6px}
+  .dash-greet{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;color:var(--muted);
+    display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .wave{display:inline-block;transform-origin:70% 70%;animation:wave 2.6s ease-in-out infinite}
+  @keyframes wave{0%,55%,100%{transform:rotate(0)}
+    8%{transform:rotate(14deg)} 16%{transform:rotate(-8deg)}
+    24%{transform:rotate(14deg)} 32%{transform:rotate(-4deg)} 40%{transform:rotate(10deg)}}
+  .dash-welcome .dash-title{text-align:left}
+  .dash-who{font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(34px,5.5vw,52px);
+    line-height:1.02;letter-spacing:.01em;color:var(--text)}
   .dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:30px}
   .dash-stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
   .ds-k{display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;
@@ -160,7 +167,11 @@
   .quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:30px}
   .quick{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;cursor:pointer;
     display:flex;align-items:center;gap:13px;transition:border-color .15s,background .15s;text-align:left}
-  .quick:hover{border-color:var(--red);background:rgba(229,57,44,.06)}
+  .quick{box-shadow:0 0 20px -8px rgba(229,57,44,.30)}
+  .quick:hover{border-color:var(--red);background:rgba(229,57,44,.06);
+    box-shadow:0 0 26px -4px rgba(229,57,44,.45), inset 0 0 0 1px rgba(255,87,76,.18);transform:translateY(-1px)}
+  .quick:hover .q-ic{border-color:var(--red);color:var(--red-bright)}
+  .quick .q-ic{transition:border-color .15s,color .15s}
   .quick .q-ic{width:38px;height:38px;flex:none;border-radius:10px;border:1px solid var(--line);color:var(--red);
     display:flex;align-items:center;justify-content:center;background:var(--bg-soft)}
   .quick .q-ic svg{width:19px;height:19px}
@@ -615,6 +626,25 @@
     .glitch{font-size:34px}
   }
 
+  /* ===== centred dashboard column ===== */
+  #view-dashboard{max-width:980px;margin:0 auto}
+  #view-dashboard .dash-welcome{text-align:center;margin:8px 0 30px}
+  #view-dashboard .dash-greet{justify-content:center}
+  #view-dashboard .dash-welcome .dash-title{text-align:center}
+  #view-dashboard .dash-sec{text-align:center}
+  #view-dashboard .upsell{justify-content:center;text-align:center;flex-direction:column;gap:14px}
+  #view-dashboard .upsell-txt{text-align:center}
+  #view-dashboard .quick{justify-content:center;text-align:center;flex-direction:column;gap:10px;padding:20px 16px}
+  #view-dashboard .quick b{text-align:center}
+  #view-dashboard .quick span{display:block;text-align:center}
+  #view-dashboard .dash-stat{text-align:center}
+  #view-dashboard .redeem{margin-left:auto;margin-right:auto}
+  @media(max-width:640px){
+    #view-dashboard .upsell-btn{width:100%}
+    #view-dashboard .quick{flex-direction:row;text-align:left;justify-content:flex-start}
+    #view-dashboard .quick b,#view-dashboard .quick span{text-align:left}
+  }
+
   .stage{margin-top:26px}
   .card{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
     opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .35s,transform .35s}
@@ -1045,8 +1075,8 @@
     <!-- DASHBOARD -->
     <section class="view active" id="view-dashboard">
       <div class="dash-welcome">
-        <h1 class="dash-title">Welcome back</h1>
-        <p class="dash-who" id="dash-who">&nbsp;</p>
+        <p class="dash-greet">Welcome back <span class="wave">&#128075;</span></p>
+        <h1 class="dash-title dash-who" id="dash-who">&nbsp;</h1>
       </div>
       <div class="lock-banner" id="lock-banner" style="display:none">
         &#128274; <b>Launching soon.</b> The tools are locked until launch day &#8212; you can look around, but generating is disabled for now.
