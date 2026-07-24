@@ -89,6 +89,11 @@
     border-radius:100px;padding:6px 12px;display:flex;align-items:center;gap:6px;cursor:pointer}
   .tb-credits b{color:var(--red);font-weight:700}
   .tb-credits.low b{color:var(--red-bright)}
+  .tb-redeem{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:100px;
+    padding:7px 14px;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;
+    transition:all .15s;white-space:nowrap}
+  .tb-redeem:hover{border-color:var(--red);background:rgba(229,57,44,.07);color:var(--red-bright)}
+  @media(max-width:640px){ .tb-redeem span{display:none} .tb-redeem{padding:7px 11px} }
   .tb-buy{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;
     background:linear-gradient(180deg,var(--red-bright),var(--red));color:#fff;border:none;border-radius:100px;
     padding:8px 16px;transition:filter .15s;white-space:nowrap}
@@ -147,15 +152,15 @@
 
   /* ===== dashboard home ===== */
   .dash-welcome{margin:4px 0 26px}
-  .dash-greet{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;color:var(--muted);
-    display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .dash-greet{font-family:'Archivo',sans-serif;font-weight:600;font-size:17px;color:var(--muted);
+    display:flex;align-items:center;gap:8px;margin-bottom:6px}
   .wave{display:inline-block;transform-origin:70% 70%;animation:wave 2.6s ease-in-out infinite}
   @keyframes wave{0%,55%,100%{transform:rotate(0)}
     8%{transform:rotate(14deg)} 16%{transform:rotate(-8deg)}
     24%{transform:rotate(14deg)} 32%{transform:rotate(-4deg)} 40%{transform:rotate(10deg)}}
   .dash-welcome .dash-title{text-align:left}
-  .dash-who{font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(34px,5.5vw,52px);
-    line-height:1.02;letter-spacing:.01em;color:var(--text)}
+  .dash-who{font-family:'Archivo',sans-serif;font-weight:800;font-size:clamp(24px,3.4vw,30px);
+    line-height:1.2;letter-spacing:-.01em;color:var(--text);text-transform:none}
   .dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:30px}
   .dash-stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
   .ds-k{display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;
@@ -1068,6 +1073,7 @@
           <div style="flex:1"></div>
           <span class="userchip" id="userchip" hidden>@<b id="user-name"></b></span>
           <span class="tb-credits" id="credits" title="Get more credits">&#9889; <b id="credit-num">0</b> credits</span>
+          <button class="tb-redeem" id="tb-redeem" title="Redeem a credit code">&#127915; <span>Redeem</span></button>
           <button class="tb-buy" id="buycred-btn">Buy Credits</button>
         </div>
         <div class="content" id="content">
@@ -1415,6 +1421,22 @@
         </div><!-- /.content -->
       </div><!-- /.main -->
     </div><!-- /.shell -->
+
+    <div class="logout-modal" id="redeem-modal" hidden>
+      <div class="logout-box">
+        <h3>Redeem a code</h3>
+        <p>Paste the code you were given and your credits land instantly.</p>
+        <div class="field" style="margin-bottom:12px">
+          <input id="rm-code" type="text" placeholder="EC-XXXX-XXXX" aria-label="Redeem code" maxlength="20" autocomplete="off"
+            style="width:100%;background:transparent;border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:15px;letter-spacing:.08em;text-transform:uppercase;padding:14px 15px" />
+        </div>
+        <div class="redeem-msg" id="rm-msg" role="status" style="margin-bottom:14px"></div>
+        <div class="logout-actions">
+          <button class="lo-cancel" id="rm-cancel">Cancel</button>
+          <button class="lo-confirm" id="rm-go">Redeem</button>
+        </div>
+      </div>
+    </div>
 
     <div class="logout-modal" id="logout-modal" hidden>
       <div class="logout-box">
@@ -2733,7 +2755,7 @@ async function loadOverview(){
     const r=await fetch('/api/overview',{headers:{'Authorization':'Bearer '+(token||'')}});
     if(!r.ok) return;
     const d=await r.json();
-    if(d.username) $('dash-who').textContent='@'+d.username;
+    if(d.username) $('dash-who').textContent=d.username;
     if(d.credits!=null){ $('ds-credits').innerHTML=d.credits+'<small>credits</small>'; setUpsell(d.credits); }
     $('ds-today').innerHTML=(d.todayClicks||0)+'<small>clicks</small>';
     $('ds-country').innerHTML = d.topCountry
@@ -2809,24 +2831,40 @@ pmOverlay.addEventListener('click', (e)=>{ if(e.target===pmOverlay) closePricing
 
 const redeemBtn=$('redeem-btn'), redeemCode=$('redeem-code'), redeemMsg=$('redeem-msg');
 function showRedeemMsg(msg,kind){ redeemMsg.textContent=msg; redeemMsg.className='redeem-msg show '+(kind||''); }
-async function doRedeem(){
-  const code=(redeemCode.value||'').trim();
-  if(!code){ showRedeemMsg('✕ enter a code.','bad'); redeemCode.focus(); return; }
-  if(DEMO){ showRedeemMsg('✦ codes work on the live site.','good'); return; }
-  redeemBtn.disabled=true; showRedeemMsg('checking…','');
+function setMsg(el,txt,kind){ el.textContent=txt; el.className='redeem-msg show '+(kind||''); }
+
+// shared by the dashboard box and the top-bar modal
+async function redeemWith(inputEl, msgEl, btnEl){
+  const code=(inputEl.value||'').trim();
+  if(!code){ setMsg(msgEl,'✕ enter a code.','bad'); inputEl.focus(); return; }
+  if(DEMO){ setMsg(msgEl,'✦ codes work on the live site.','good'); return; }
+  btnEl.disabled=true; setMsg(msgEl,'checking…','');
   try{
     const token=session&&session.access_token;
     const r=await fetch('/api/redeem',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({code})});
     const data=await r.json();
-    if(!r.ok){ showRedeemMsg('✕ '+(data.error||'invalid code'),'bad'); return; }
+    if(!r.ok){ setMsg(msgEl,'✕ '+(data.error||'invalid code'),'bad'); return; }
     if(data.balance!=null) setCredits(data.balance);
-    showRedeemMsg('✦ +'+data.creditsAdded+' credits added!','good');
-    redeemCode.value='';
-  }catch(_){ showRedeemMsg('✕ something went wrong. try again.','bad'); }
-  finally{ redeemBtn.disabled=false; }
+    setMsg(msgEl,'✦ +'+data.creditsAdded+' credits added!','good');
+    inputEl.value='';
+    if(typeof loadOverview==='function') loadOverview();   // refresh the dashboard cards
+  }catch(_){ setMsg(msgEl,'✕ something went wrong. try again.','bad'); }
+  finally{ btnEl.disabled=false; }
 }
+
+function doRedeem(){ return redeemWith(redeemCode, redeemMsg, redeemBtn); }
 redeemBtn.addEventListener('click',doRedeem);
 redeemCode.addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); doRedeem(); }});
+
+// top-bar redeem modal — reachable from any view
+const redeemModal=$('redeem-modal'), rmCode=$('rm-code'), rmMsg=$('rm-msg'), rmGo=$('rm-go');
+function openRedeem(){ redeemModal.hidden=false; rmMsg.className='redeem-msg'; rmMsg.textContent=''; rmCode.value=''; setTimeout(()=>rmCode.focus(),60); }
+function closeRedeem(){ redeemModal.hidden=true; }
+$('tb-redeem')&&$('tb-redeem').addEventListener('click',openRedeem);
+$('rm-cancel')&&$('rm-cancel').addEventListener('click',closeRedeem);
+rmGo&&rmGo.addEventListener('click',()=>redeemWith(rmCode,rmMsg,rmGo));
+rmCode&&rmCode.addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); redeemWith(rmCode,rmMsg,rmGo); }});
+redeemModal&&redeemModal.addEventListener('click',(e)=>{ if(e.target===redeemModal) closeRedeem(); });
 
 $('discord-btn').addEventListener('click', async ()=>{
   if(DEMO){ showErr(authErr,'discord login works on the live site.'); return; }
