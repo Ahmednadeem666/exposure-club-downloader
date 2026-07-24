@@ -140,7 +140,7 @@ app.post('/api/paddle-webhook', express.raw({ type: '*/*', limit: '512kb' }), as
   }
 });
 
-app.use(express.json({ limit: '16kb' }));
+app.use(express.json({ limit: '12mb' }));   // large enough for a base64 reference image + a full page on refine
 
 // serve the page (from ./public or next to this file)
 const PUBLIC_DIR = fs.existsSync(path.join(__dirname, 'public', 'index.html'))
@@ -960,6 +960,9 @@ app.post('/api/lander', async (req, res) => {
 
     const brief = (req.body && req.body.brief ? String(req.body.brief) : '').trim();
     const style = (req.body && req.body.style ? String(req.body.style) : '').trim();
+    const img = (req.body && req.body.image) ? req.body.image : null;   // {media_type, data(base64)}
+    const OKTYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const hasImg = !!(img && OKTYPES.includes(String(img.media_type)) && typeof img.data === 'string' && img.data.length < 7000000);
     if (!brief) return res.status(400).json({ error: 'describe the page you want first.' });
     if (brief.length > MAX_BRIEF_CHARS) return res.status(400).json({ error: 'keep the brief a bit shorter.' });
 
@@ -987,6 +990,11 @@ Requirements:
 
 Respond with ONLY the raw HTML file. No preamble, no explanation, no markdown code fences.`;
 
+    const userContent = hasImg
+      ? [{ type: 'image', source: { type: 'base64', media_type: img.media_type, data: img.data } },
+         { type: 'text', text: prompt + '\n\nThe attached image is a visual reference \u2014 match its layout, colours and overall feel.' }]
+      : prompt;
+
     let r;
     try {
       r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -999,7 +1007,7 @@ Respond with ONLY the raw HTML file. No preamble, no explanation, no markdown co
         body: JSON.stringify({
           model: LANDER_MODEL,
           max_tokens: 8000,
-          messages: [{ role: 'user', content: prompt }],
+          messages: [{ role: 'user', content: userContent }],
         }),
       });
     } catch (e) {
@@ -1093,6 +1101,7 @@ Respond with ONLY the raw updated HTML file. No preamble, no explanation, no mar
           model: LANDER_MODEL,
           max_tokens: 16000,
           messages: [{ role: 'user', content: prompt }],
+          stream: true,
         }),
       });
     } catch (e) {
@@ -1107,13 +1116,48 @@ Respond with ONLY the raw updated HTML file. No preamble, no explanation, no mar
       return res.status(502).json({ error: 'edit failed. Try again — your credits were not charged.' });
     }
 
-    const data = await r.json();
-    let out = (data.content || []).map((i) => (i.type === 'text' ? i.text : '')).join('').trim();
-    out = out.replace(/^```(?:html)?\s*/i, '').replace(/```\s*$/, '').trim();
+    // stream so a long edit can't hit a proxy timeout
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (res.flushHeaders) res.flushHeaders();
+    const send = (o) => { try { res.write('data: ' + JSON.stringify(o) + '\n\n'); } catch (_) {} };
 
+    let out = '';
+    let ping = setInterval(() => send({ ping: 1 }), 8000);   // keep the connection warm
+    try {
+      const reader = r.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl;
+        while ((nl = buf.indexOf('\n')) >= 0) {
+          const line = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if (!line.startsWith('data:')) continue;
+          const payload = line.slice(5).trim();
+          if (!payload || payload === '[DONE]') continue;
+          let evt; try { evt = JSON.parse(payload); } catch (_) { continue; }
+          if (evt.type === 'content_block_delta' && evt.delta && typeof evt.delta.text === 'string') {
+            out += evt.delta.text;
+            send({ n: out.length });                          // progress only, not the payload
+          }
+        }
+      }
+    } catch (e) {
+      console.error('refine stream error:', e);
+    }
+    clearInterval(ping);
+
+    out = out.replace(/^```(?:html)?\s*/i, '').replace(/```\s*$/, '').trim();
     if (!out || !/<html[\s>]/i.test(out)) {
       await refund();
-      return res.status(502).json({ error: 'got a malformed page. Try again — your credits were not charged.' });
+      send({ error: 'got a malformed page. Try again — your credits were not charged.' });
+      return res.end();
     }
 
     let creditsLeft = null;
@@ -1122,7 +1166,8 @@ Respond with ONLY the raw updated HTML file. No preamble, no explanation, no mar
       if (prof) creditsLeft = prof.credits;
     } catch (_) {}
 
-    return res.json({ html: out, creditsLeft });
+    send({ done: true, html: out, creditsLeft });
+    return res.end();
   } catch (e) {
     console.error('lander refine error:', e);
     return res.status(500).json({ error: 'something went wrong. Try again.' });
